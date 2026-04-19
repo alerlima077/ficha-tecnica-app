@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ficha Técnica Completa - Júlio's Pizzaria</title>
+  <link rel="stylesheet" href="../src/css/style.css">
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#ff6600">
+  <style>
+    /* Estilos específicos para ficha técnica */
+    .ficha-container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    .form-section {
+      background: white;
+      border-radius: 15px;
+      padding: 25px;
+      margin-bottom: 30px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .form-section h3 {
+      color: #ff6600;
+      border-bottom: 2px solid #ff6600;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .form-group label {
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: #555;
+    }
+    
+    .form-group input, 
+    .form-group select, 
+    .form-group textarea {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+    
+    .ingrediente-item {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+    }
+    
+    .btn-add {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    
+    .btn-save {
+      background: #ff6600;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      width: 100%;
+      margin-top: 20px;
+    }
+    
+    .btn-save:hover {
+      background: #e65c00;
+    }
+    
+    .custo-total {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      margin-top: 20px;
+    }
+    
+    .custo-total h4 {
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+    }
+    
+    .custo-total .valor {
+      font-size: 2rem;
+      font-weight: bold;
+    }
+    
+    .success-message {
+      background: #d4edda;
+      color: #155724;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    
+    .error-message {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="ficha-container">
+    <header>
+      <div class="logo">
+        <img src="../src/assets/logo.png" alt="Logo Júlio's Pizzaria" width="80" onerror="this.src='https://via.placeholder.com/80x80?text=Logo'">
+      </div>
+      <h1>🍕 Ficha Técnica Completa</h1>
+    </header>
+
+    <div id="successMessage" class="success-message"></div>
+    <div id="errorMessage" class="error-message"></div>
+
+    <form id="fichaForm">
+      <!-- 1. IDENTIFICAÇÃO DO PRODUTO -->
+      <div class="form-section">
+        <h3>📋 1. Identificação do Produto</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Nome da Pizza *</label>
+            <input type="text" id="nome" required placeholder="Ex: Calabresa Especial">
+          </div>
+          <div class="form-group">
+            <label>Código Interno / SKU *</label>
+            <input type="text" id="sku" required placeholder="Ex: PIZ-CAL-001">
+          </div>
+          <div class="form-group">
+            <label>Categoria *</label>
+            <select id="categoria" required>
+              <option value="">Selecione</option>
+              <option value="tradicional">Tradicional</option>
+              <option value="gourmet">Gourmet</option>
+              <option value="doce">Doce</option>
+              <option value="brotinho">Brotinho</option>
+              <option value="vegetariana">Vegetariana</option>
+              <option value="vegana">Vegana</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Tamanho *</label>
+            <select id="tamanho" required>
+              <option value="">Selecione</option>
+              <option value="broto">Brotinho (4 fatias)</option>
+              <option value="media">Média (6 fatias)</option>
+              <option value="grande">Grande (8 fatias)</option>
+              <option value="familia">Família (12 fatias)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. DESCRIÇÃO DO PRODUTO -->
+      <div class="form-section">
+        <h3>📝 2. Descrição do Produto</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Breve descrição comercial</label>
+            <textarea id="descricao" placeholder="Ex: Pizza tradicional com calabresa de primeira qualidade..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Características</label>
+            <input type="text" id="caracteristicas" placeholder="Ex: Massa fina, borda recheada">
+          </div>
+          <div class="form-group">
+            <label>Diferenciais</label>
+            <input type="text" id="diferenciais" placeholder="Ex: Artesanal, fermentação longa">
+          </div>
+        </div>
+      </div>
+
+      <!-- 3-7. INGREDIENTES (dinâmico) -->
+      <div class="form-section">
+        <h3>🥗 3-7. Ingredientes, Quantidades, Unidade e Custos</h3>
+        <div id="ingredientesList">
+          <div class="ingrediente-item" data-index="0">
+            <input type="text" placeholder="Nome do ingrediente" class="ingrediente-nome">
+            <input type="number" step="0.001" placeholder="Quantidade" class="ingrediente-qtd">
+            <select class="ingrediente-unidade">
+              <option value="g">g</option>
+              <option value="kg">kg</option>
+              <option value="ml">ml</option>
+              <option value="L">L</option>
+              <option value="un">unidade</option>
+            </select>
+            <input type="number" step="0.01" placeholder="Custo unitário (R$)" class="ingrediente-custoUnit">
+            <input type="text" placeholder="Fornecedor" class="ingrediente-fornecedor">
+          </div>
+        </div>
+        <button type="button" class="btn-add" onclick="adicionarIngrediente()">+ Adicionar Ingrediente</button>
+      </div>
+
+      <!-- 8. CUSTO TOTAL -->
+      <div class="custo-total">
+        <h4>💰 Custo Total da Pizza (CMV)</h4>
+        <div class="valor" id="custoTotal">R$ 0,00</div>
+      </div>
+
+      <!-- 9. CUSTOS INDIRETOS -->
+      <div class="form-section">
+        <h3>⚡ 9. Custos Indiretos</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Gás / Energia (R$)</label>
+            <input type="number" step="0.01" id="custoGas" value="0">
+          </div>
+          <div class="form-group">
+            <label>Água (R$)</label>
+            <input type="number" step="0.01" id="custoAgua" value="0">
+          </div>
+          <div class="form-group">
+            <label>Embalagem (caixa, sachês) (R$)</label>
+            <input type="number" step="0.01" id="custoEmbalagem" value="0">
+          </div>
+          <div class="form-group">
+            <label>Taxa de delivery (R$)</label>
+            <input type="number" step="0.01" id="custoDelivery" value="0">
+          </div>
+          <div class="form-group">
+            <label>Mão de obra proporcional (R$)</label>
+            <input type="number" step="0.01" id="custoMaoObra" value="0">
+          </div>
+        </div>
+      </div>
+
+      <!-- 10-11. PREÇO E MARGEM -->
+      <div class="form-section">
+        <h3>💵 10-11. Preço de Venda e Margem</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Preço de venda (R$) *</label>
+            <input type="number" step="0.01" id="precoVenda" required>
+          </div>
+          <div class="form-group">
+            <label>Margem desejada (%)</label>
+            <input type="number" step="0.1" id="margemDesejada" placeholder="Ex: 45">
+          </div>
+          <div class="form-group">
+            <label>Margem real (%)</label>
+            <input type="text" id="margemReal" readonly style="background:#f0f0f0">
+          </div>
+        </div>
+      </div>
+
+      <!-- 12. RENDIMENTO -->
+      <div class="form-section">
+        <h3>📊 12. Rendimento</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Quantas pizzas esta receita gera?</label>
+            <input type="number" id="rendimento" value="1" step="0.5">
+          </div>
+          <div class="form-group">
+            <label>Porcionamento padrão</label>
+            <input type="text" id="porcionamento" placeholder="Ex: 8 fatias">
+          </div>
+        </div>
+      </div>
+
+      <!-- 13. MODO DE PREPARO -->
+      <div class="form-section">
+        <h3>👨‍🍳 13. Modo de Preparo</h3>
+        <div class="form-group">
+          <label>Passo a passo detalhado</label>
+          <textarea id="modoPreparo" rows="6" placeholder="1. Preparo da massa&#10;2. Montagem&#10;3. Forno..."></textarea>
+        </div>
+      </div>
+
+      <!-- 14. TEMPO DE PREPARO -->
+      <div class="form-section">
+        <h3>⏱️ 14. Tempo de Preparo</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Tempo total (minutos)</label>
+            <input type="number" id="tempoTotal" step="0.5">
+          </div>
+          <div class="form-group">
+            <label>Tempo de forno (minutos)</label>
+            <input type="number" id="tempoForno" step="0.5">
+          </div>
+          <div class="form-group">
+            <label>Tempo de montagem (minutos)</label>
+            <input type="number" id="tempoMontagem" step="0.5">
+          </div>
+        </div>
+      </div>
+
+      <!-- 15. EQUIPAMENTOS -->
+      <div class="form-section">
+        <h3>🔧 15. Equipamentos Utilizados</h3>
+        <div class="form-group">
+          <input type="text" id="equipamentos" placeholder="Ex: Forno elétrico, masseira, bancada inox">
+        </div>
+      </div>
+
+      <!-- 16. PADRÃO DE MONTAGEM -->
+      <div class="form-section">
+        <h3>🎨 16. Padrão de Montagem</h3>
+        <div class="form-group">
+          <textarea id="padraoMontagem" placeholder="Ordem dos ingredientes, quantidade visual, borda com/sem recheio..."></textarea>
+        </div>
+      </div>
+
+      <!-- 17. CONTROLE DE QUALIDADE -->
+      <div class="form-section">
+        <h3>✅ 17. Controle de Qualidade</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Ponto da massa</label>
+            <input type="text" id="qualidadeMassa" placeholder="Ex: Dourada, crocante">
+          </div>
+          <div class="form-group">
+            <label>Tempo ideal de forno</label>
+            <input type="text" id="qualidadeTempo" placeholder="Ex: 8-10 minutos">
+          </div>
+          <div class="form-group">
+            <label>Aparência final</label>
+            <input type="text" id="qualidadeAparencia" placeholder="Ex: Uniforme, borda alta">
+          </div>
+          <div class="form-group">
+            <label>Peso final da pizza (g)</label>
+            <input type="number" id="qualidadePeso" step="1">
+          </div>
+        </div>
+      </div>
+
+      <!-- 18. INFORMAÇÕES NUTRICIONAIS -->
+      <div class="form-section">
+        <h3>🥗 18. Informações Nutricionais</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Calorias (por fatia)</label>
+            <input type="number" id="nutriCalorias" step="1">
+          </div>
+          <div class="form-group">
+            <label>Proteínas (g)</label>
+            <input type="number" id="nutriProteinas" step="0.1">
+          </div>
+          <div class="form-group">
+            <label>Alergênicos</label>
+            <input type="text" id="nutriAlergenicos" placeholder="Ex: Glúten, lactose">
+          </div>
+        </div>
+      </div>
+
+      <!-- 19. FORNECEDORES -->
+      <div class="form-section">
+        <h3>🏪 19. Fornecedores</h3>
+        <div class="form-group">
+          <textarea id="fornecedores" placeholder="Nome do fornecedor - Marca - Preço - Prazo&#10;Ex: Sadia - Mussarela - R$28/kg - 2 dias"></textarea>
+        </div>
+      </div>
+
+      <!-- 20. DATA E VERSÃO -->
+      <div class="form-section">
+        <h3>📅 20. Data e Versão</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Data de criação</label>
+            <input type="date" id="dataCriacao">
+          </div>
+          <div class="form-group">
+            <label>Versão</label>
+            <input type="number" id="versao" value="1" step="0.1">
+          </div>
+        </div>
+      </div>
+
+      <!-- 21. RESPONSÁVEL -->
+      <div class="form-section">
+        <h3>👤 21. Responsável pela Ficha</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Nome do pizzaiolo / gestor</label>
+            <input type="text" id="responsavel" placeholder="Ex: José Silva">
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-save">💾 Salvar Ficha Técnica</button>
+    </form>
+  </div>
+
+  <script type="module" src="../src/js/ficha-tecnica.js"></script>
+</body>
+</html>
