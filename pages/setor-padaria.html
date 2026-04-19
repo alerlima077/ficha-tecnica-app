@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Padaria - Júlio's</title>
+  <link rel="stylesheet" href="../src/css/style.css">
+  <style>
+    .setor-header {
+      background: linear-gradient(135deg, #f39c12, #e67e22);
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 30px;
+      color: white;
+    }
+    
+    .categoria-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    
+    .categoria-card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.3s;
+      border-left: 5px solid #f39c12;
+      box-shadow: var(--shadow);
+    }
+    
+    .categoria-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-hover);
+    }
+    
+    .categoria-icon {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+    
+    .categoria-nome {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: var(--dark);
+    }
+    
+    .categoria-count {
+      font-size: 0.8rem;
+      color: var(--gray);
+      margin-top: 5px;
+    }
+    
+    .modal-produtos {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    
+    .modal-produtos-content {
+      background: white;
+      border-radius: var(--radius);
+      padding: 25px;
+      max-width: 800px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    
+    .modal-produtos-content h3 {
+      margin-bottom: 20px;
+      color: var(--dark);
+    }
+    
+    .lista-produtos {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .lista-produtos th {
+      background: linear-gradient(135deg, #f39c12, #e67e22);
+      color: white;
+      padding: 10px;
+      text-align: left;
+    }
+    
+    .lista-produtos td {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .lista-produtos tr:hover {
+      background: #f8f9fa;
+    }
+    
+    .btn-excluir-produto {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 5px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    
+    .btn-editar-produto {
+      background: #ff6600;
+      color: white;
+      border: none;
+      padding: 5px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-right: 5px;
+    }
+    
+    .btn-fechar-modal {
+      background: #6c757d;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    
+    .total-custo {
+      background: #e8f4fd;
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 15px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <div class="logo-container">
+        <div class="logo">
+          <img src="../src/assets/logo.png" alt="Júlio's">
+        </div>
+        <div class="header-info">
+          <h1>🥖 Padaria</h1>
+          <span class="subtitle">Júlio's</span>
+        </div>
+      </div>
+      <nav class="main-nav">
+        <a href="../public/index.html" class="nav-btn">
+          <span class="emoji">🏠</span>
+          <span>Dashboard</span>
+        </a>
+        <a href="insumos.html" class="nav-btn">
+          <span class="emoji">📦</span>
+          <span>Insumos</span>
+        </a>
+        <a href="ficha-tecnica.html" class="nav-btn">
+          <span class="emoji">📝</span>
+          <span>Ficha Técnica</span>
+        </a>
+        <a href="pre-preparo.html" class="nav-btn">
+          <span class="emoji">🥣</span>
+          <span>Pré-Preparo</span>
+        </a>
+        <a href="cardapio.html" class="nav-btn">
+          <span class="emoji">📋</span>
+          <span>Cardápio</span>
+        </a>
+      </nav>
+    </header>
+
+    <div class="setor-header">
+      <h2>🥖 Setor Padaria</h2>
+      <p>Gerencie pães, roscas, sonhos e outros produtos de padaria</p>
+    </div>
+
+    <section>
+      <h3 style="margin-bottom: 20px; color: white;">📋 Categorias</h3>
+      <div class="categoria-grid" id="categorias-container">
+        <!-- Categorias via JS -->
+      </div>
+    </section>
+
+    <!-- Modal de Produtos -->
+    <div id="modalProdutos" class="modal-produtos">
+      <div class="modal-produtos-content">
+        <h3 id="modalTitulo">📋 Produtos da Categoria</h3>
+        <div style="overflow-x: auto;">
+          <table class="lista-produtos" id="listaProdutosTable">
+            <thead>
+              <tr>
+                <th>Produto</th>
+                <th>CMV (R$)</th>
+                <th>Preço Venda</th>
+                <th>Margem</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="listaProdutosBody">
+              <tr><td colspan="5" style="text-align: center;">Carregando...</td</tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="total-custo" id="totalCustoDiv"></div>
+        <button class="btn-fechar-modal" id="btnFecharModal">Fechar</button>
+      </div>
+    </div>
+
+    <footer>
+      <p>© 2026 Júlio's - Sistema de Ficha Técnica</p>
+    </footer>
+  </div>
+
+  <script type="module">
+    import { db } from "../src/db/firebase.js";
+    import { collection, getDocs, query, where, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    
+    const categorias = [
+      { nome: "🥖 Pães", chave: "pao", icone: "🥖" },
+      { nome: "🥨 Roscas", chave: "rosca", icone: "🥨" },
+      { nome: "🍩 Sonhos", chave: "sonho", icone: "🍩" }
+    ];
+    
+    let produtosPorCategoria = {};
+    
+    // Inicializar objeto
+    categorias.forEach(cat => {
+      produtosPorCategoria[cat.chave] = [];
+    });
+    
+    // Carregar produtos do Firebase
+    async function carregarProdutos() {
+      try {
+        const q = query(collection(db, "produtos"), where("setor", "==", "padaria"));
+        const snapshot = await getDocs(q);
+        
+        // Resetar arrays
+        categorias.forEach(cat => {
+          produtosPorCategoria[cat.chave] = [];
+        });
+        
+        snapshot.forEach(doc => {
+          const produto = { id: doc.id, ...doc.data() };
+          const categoria = produto.categoria || '';
+          
+          if (produtosPorCategoria[categoria]) {
+            produtosPorCategoria[categoria].push(produto);
+          }
+        });
+        
+        console.log("📦 Produtos carregados:", produtosPorCategoria);
+        renderizarCategorias();
+        
+      } catch (error) {
+        console.error("Erro ao carregar produtos:", error);
+      }
+    }
+    
+    // Renderizar cards das categorias
+    function renderizarCategorias() {
+      const container = document.getElementById('categorias-container');
+      container.innerHTML = '';
+      
+      categorias.forEach(cat => {
+        const produtos = produtosPorCategoria[cat.chave] || [];
+        const card = document.createElement('div');
+        card.className = 'categoria-card';
+        card.onclick = () => abrirModalProdutos(cat.nome, cat.chave);
+        card.innerHTML = `
+          <div class="categoria-icon">${cat.icone}</div>
+          <div class="categoria-nome">${cat.nome}</div>
+          <div class="categoria-count">${produtos.length} ${produtos.length === 1 ? 'produto' : 'produtos'}</div>
+        `;
+        container.appendChild(card);
+      });
+      
+      // Botão adicional para nova ficha
+      const btnCard = document.createElement('div');
+      btnCard.className = 'categoria-card';
+      btnCard.style.borderLeftColor = '#f39c12';
+      btnCard.style.background = '#f8f9fa';
+      btnCard.onclick = () => window.location.href = 'ficha-tecnica.html?setor=padaria';
+      btnCard.innerHTML = `
+        <div class="categoria-icon">➕</div>
+        <div class="categoria-nome">Nova Ficha Técnica</div>
+        <div class="categoria-count">Cadastrar novo produto</div>
+      `;
+      container.appendChild(btnCard);
+    }
+    
+    // Abrir modal com produtos da categoria
+    async function abrirModalProdutos(titulo, chave) {
+      const produtos = produtosPorCategoria[chave] || [];
+      const modal = document.getElementById('modalProdutos');
+      const modalTitulo = document.getElementById('modalTitulo');
+      const tbody = document.getElementById('listaProdutosBody');
+      const totalCustoDiv = document.getElementById('totalCustoDiv');
+      
+      modalTitulo.innerHTML = `📋 ${titulo} (${produtos.length} produtos)`;
+      
+      if (produtos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum produto cadastrado nesta categoria</td</tr>';
+        totalCustoDiv.innerHTML = '';
+        modal.style.display = 'flex';
+        return;
+      }
+      
+      tbody.innerHTML = '';
+      let totalCusto = 0;
+      let totalPreco = 0;
+      
+      produtos.forEach(produto => {
+        const margem = produto.precoVenda > 0 ? ((produto.precoVenda - produto.custoTotal) / produto.precoVenda) * 100 : 0;
+        totalCusto += produto.custoTotal || 0;
+        totalPreco += produto.precoVenda || 0;
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><strong>${produto.nome || '-'}</strong></td>
+          <td>R$ ${(produto.custoTotal || 0).toFixed(2)}</td>
+          <td>R$ ${(produto.precoVenda || 0).toFixed(2)}</td>
+          <td style="color: ${margem < 30 ? '#dc3545' : margem < 50 ? '#ffa502' : '#28a745'}">${margem.toFixed(1)}%</td>
+          <td>
+            <button class="btn-editar-produto" data-id="${produto.id}" data-nome="${produto.nome}">✏️ Editar</button>
+            <button class="btn-excluir-produto" data-id="${produto.id}" data-nome="${produto.nome}">🗑️ Excluir</button>
+           </td>
+        `;
+        tbody.appendChild(row);
+      });
+      
+      // Adicionar eventos aos botões
+      document.querySelectorAll('.btn-editar-produto').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const id = btn.getAttribute('data-id');
+          window.location.href = `ficha-tecnica.html?editar=${id}`;
+        });
+      });
+      
+      document.querySelectorAll('.btn-excluir-produto').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const id = btn.getAttribute('data-id');
+          const nome = btn.getAttribute('data-nome');
+          
+          if (confirm(`⚠️ Tem certeza que deseja excluir "${nome}"?`)) {
+            try {
+              await deleteDoc(doc(db, "produtos", id));
+              alert(`✅ "${nome}" excluído com sucesso!`);
+              await carregarProdutos();
+              abrirModalProdutos(titulo, chave);
+            } catch (error) {
+              console.error("Erro ao excluir:", error);
+              alert("❌ Erro ao excluir produto");
+            }
+          }
+        });
+      });
+      
+      const margemMedia = totalPreco > 0 ? ((totalPreco - totalCusto) / totalPreco) * 100 : 0;
+      totalCustoDiv.innerHTML = `
+        <strong>📊 Resumo da Categoria:</strong> 
+        Custo Total: R$ ${totalCusto.toFixed(2)} | 
+        Preço Total: R$ ${totalPreco.toFixed(2)} | 
+        Margem Média: <span style="color: ${margemMedia < 30 ? '#dc3545' : margemMedia < 50 ? '#ffa502' : '#28a745'}">${margemMedia.toFixed(1)}%</span>
+      `;
+      
+      modal.style.display = 'flex';
+    }
+    
+    // Fechar modal
+    document.getElementById('btnFecharModal').onclick = () => {
+      document.getElementById('modalProdutos').style.display = 'none';
+    };
+    
+    window.onclick = (e) => {
+      const modal = document.getElementById('modalProdutos');
+      if (e.target === modal) {
+        modal.style.display = 'none';
+      }
+    };
+    
+    // Inicializar
+    carregarProdutos();
+  </script>
+</body>
+</html>

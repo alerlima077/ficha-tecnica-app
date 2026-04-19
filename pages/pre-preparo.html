@@ -109,6 +109,115 @@
       font-weight: bold;
       color: var(--primary);
     }
+
+    /* Tabela de pré-preparos existentes */
+    .tabela-pre-container {
+      margin-top: 40px;
+      border-top: 2px solid var(--light);
+      padding-top: 25px;
+    }
+    
+    .tabela-pre-container h3 {
+      margin-bottom: 20px;
+      color: var(--dark);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .tabela-pre {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .tabela-pre th {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 12px;
+      text-align: left;
+    }
+    
+    .tabela-pre td {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .tabela-pre tr:hover {
+      background: #f8f9fa;
+    }
+    
+    .btn-editar {
+      background: #ff6600;
+      color: white;
+      border: none;
+      padding: 5px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-right: 5px;
+    }
+    
+    .btn-excluir-pre {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 5px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    
+    .modal-content {
+      background: white;
+      border-radius: var(--radius);
+      padding: 30px;
+      max-width: 800px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    
+    .modal-content h3 {
+      margin-bottom: 20px;
+      color: var(--dark);
+    }
+    
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+    
+    .btn-cancelar {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    
+    .btn-salvar-modal {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -139,6 +248,10 @@
         <a href="pre-preparo.html" class="nav-btn nova-ficha active">
           <span class="emoji">🥣</span>
           <span>Pré-Preparo</span>
+        </a>
+        <a href="../pages/cardapio.html" class="nav-btn">
+          <span class="emoji">📋</span>
+          <span>Cardápio</span>
         </a>
       </nav>
     </header>
@@ -188,7 +301,7 @@
               <select class="insumo-select" style="width: 100%;">
                 <option value="">Selecione um insumo</option>
               </select>
-              <input type="number" class="insumo-quantidade" placeholder="Quantidade" step="0.001">
+              <input type="number" class="insumo-quantidade" placeholder="Quantidade" step="0.001" value="0">
               <select class="insumo-unidade">
                 <option value="g">g</option>
                 <option value="kg">kg</option>
@@ -220,6 +333,108 @@
           💾 Salvar Pré-Preparo (e criar como insumo)
         </button>
       </form>
+
+      <!-- Tabela de Pré-Preparos Existentes -->
+      <div class="tabela-pre-container">
+        <h3>📋 Pré-Preparos Cadastrados</h3>
+        <div style="overflow-x: auto;">
+          <table class="tabela-pre" id="tabelaPrePreparos">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Classificação</th>
+                <th>Rendimento</th>
+                <th>Custo por Porção</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="prePreparosLista">
+              <tr><td colspan="5" style="text-align: center;">Selecione um setor para ver os pré-preparos</td</tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para Editar Pré-Preparo -->
+    <div id="modal" class="modal">
+      <div class="modal-content">
+        <h3 id="modalTitulo">✏️ Editar Pré-Preparo</h3>
+        <input type="hidden" id="prePreparoId">
+        
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Nome do Preparo *</label>
+            <input type="text" id="editNomePre" placeholder="Ex: MASSA BASE" required>
+          </div>
+          <div class="form-group">
+            <label>Setor *</label>
+            <select id="editSetorPre" required>
+              <option value="">Selecione</option>
+              <option value="pizzaria">🍕 Pizzaria</option>
+              <option value="restaurante">🍔 Restaurante</option>
+              <option value="padaria">🥖 Padaria</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Classificação</label>
+            <input type="text" id="editClassificacao" placeholder="Ex: MASSAS, MOLHOS, RECHEIOS">
+          </div>
+        </div>
+
+        <div class="info-porcao">
+          <strong>📊 Rendimento:</strong> Esta receita rende 
+          <input type="number" id="editRendimento" step="0.5" value="1" style="width: 80px; text-align: center;"> 
+          porção(ões) de 
+          <select id="editUnidadeRendimento" style="width: 100px;">
+            <option value="UND">UND (unidade)</option>
+            <option value="KG">KG</option>
+            <option value="L">L</option>
+            <option value="g">g</option>
+            <option value="ml">ml</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>🥗 Insumos da Receita</label>
+          <div id="editInsumosContainer">
+            <div class="insumo-item">
+              <select class="edit-insumo-select" style="width: 100%;">
+                <option value="">Selecione um insumo</option>
+              </select>
+              <input type="number" class="edit-insumo-quantidade" placeholder="Quantidade" step="0.001" value="0">
+              <select class="edit-insumo-unidade">
+                <option value="g">g</option>
+                <option value="kg">kg</option>
+                <option value="ml">ml</option>
+                <option value="L">L</option>
+                <option value="UND">UND</option>
+              </select>
+              <input type="text" class="edit-insumo-custo" readonly placeholder="Custo" style="background:#f0f0f0;">
+              <button type="button" class="btn-remover" onclick="removerInsumoEdit(this)">🗑️</button>
+            </div>
+          </div>
+          <button type="button" class="btn-add" id="btnAddInsumoEdit">
+            <span>➕</span> Adicionar Insumo
+          </button>
+        </div>
+
+        <div class="resumo-pre">
+          <div class="resumo-item">
+            <label>💰 Custo Total</label>
+            <div class="valor" id="editCustoTotal">R$ 0,00</div>
+          </div>
+          <div class="resumo-item">
+            <label>📦 Custo por Porção</label>
+            <div class="valor" id="editCustoPorPorcao">R$ 0,00</div>
+          </div>
+        </div>
+
+        <div class="modal-buttons">
+          <button class="btn-cancelar" id="btnFecharModal">Cancelar</button>
+          <button class="btn-salvar-modal" id="btnSalvarEdit">Salvar Alterações</button>
+        </div>
+      </div>
     </div>
 
     <div id="mensagem" style="position: fixed; top: 20px; right: 20px; padding: 15px 25px; border-radius: 10px; display: none; z-index: 1000;"></div>
@@ -228,6 +443,373 @@
       <p>© 2026 Júlio's - Sistema de Ficha Técnica</p>
     </footer>
   </div>
+
+  <script type="module">
+      import { db } from "../src/db/firebase.js";
+      import { collection, getDocs, query, where, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+      
+      // Função para carregar pré-preparos
+      async function carregarPrePreparos() {
+          const setor = document.getElementById('setorPre').value;
+          const tbody = document.getElementById('prePreparosLista');
+          
+          if (!setor) {
+              tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Selecione um setor para ver os pré-preparos</td></tr>';
+              return;
+          }
+          
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Carregando...</td></tr>';
+          
+          try {
+              const q = query(collection(db, "prePreparos"), where("setor", "==", setor));
+              const snapshot = await getDocs(q);
+              
+              if (snapshot.empty) {
+                  tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum pré-preparo cadastrado neste setor</td></tr>';
+                  return;
+              }
+              
+              tbody.innerHTML = "";
+              snapshot.forEach(doc => {
+                  const pre = doc.data();
+                  const row = document.createElement("tr");
+                  row.innerHTML = `
+                      <td><strong>${pre.nome}</strong></td>
+                      <td>${pre.classificacao || '-'}</td>
+                      <td>${pre.rendimento} ${pre.unidadeRendimento || 'UND'}</td>
+                      <td>R$ ${(pre.custoPorPorcao || 0).toFixed(2)}</td>
+                      <td>
+                          <button class="btn-editar" data-id="${doc.id}" data-nome="${pre.nome}" data-setor="${pre.setor}" data-classificacao="${pre.classificacao || ''}" data-rendimento="${pre.rendimento}" data-unidade="${pre.unidadeRendimento || 'UND'}">✏️ Editar</button>
+                          <button class="btn-excluir-pre" data-id="${doc.id}" data-nome="${pre.nome}">🗑️ Excluir</button>
+                      </td>
+                  `;
+                  tbody.appendChild(row);
+              });
+              
+              // Adicionar eventos aos botões
+              document.querySelectorAll('.btn-excluir-pre').forEach(btn => {
+                  btn.addEventListener('click', async () => {
+                      const id = btn.getAttribute('data-id');
+                      const nome = btn.getAttribute('data-nome');
+                      
+                      if (confirm(`Tem certeza que deseja excluir "${nome}"?`)) {
+                          await deleteDoc(doc(db, "prePreparos", id));
+                          
+                          // Excluir insumo correspondente
+                          const insumosQuery = query(collection(db, "insumos"), where("nome", "==", nome));
+                          const insumosSnapshot = await getDocs(insumosQuery);
+                          for (const insumoDoc of insumosSnapshot.docs) {
+                              await deleteDoc(doc(db, "insumos", insumoDoc.id));
+                          }
+                          
+                          alert(`✅ "${nome}" excluído!`);
+                          carregarPrePreparos();
+                      }
+                  });
+              });
+              
+          } catch (error) {
+              console.error("Erro:", error);
+              tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Erro ao carregar</td></tr>';
+          }
+      }
+      
+      // Carregar quando o setor mudar
+      document.getElementById('setorPre').addEventListener('change', carregarPrePreparos);
+      
+      // Carregar inicialmente se já tiver setor selecionado
+      if (document.getElementById('setorPre').value) {
+          carregarPrePreparos();
+      }
+      
+      console.log("✅ Script de listagem carregado!");
+  </script>
+
+  <script type="module">
+      // ============ VARIÁVEIS GLOBAIS ============
+      let insumosDisponiveis = [];
+      
+      // ============ CALCULAR CUSTO DO INSUMO ============
+      window.calcularCustoInsumoEdit = function(select) {
+          const item = select.closest('.insumo-item');
+          const quantidade = parseFloat(item.querySelector('.edit-insumo-quantidade').value) || 0;
+          const selectedOption = select.options[select.selectedIndex];
+          const valorPorPorcao = parseFloat(selectedOption?.getAttribute('data-valor-porcao')) || 0;
+          const valorCompra = parseFloat(selectedOption?.getAttribute('data-valor-compra')) || 0;
+          
+          let custo = 0;
+          const unidadeInsumo = selectedOption?.getAttribute('data-unidade') || 'KG';
+          
+          if (unidadeInsumo === 'KG' || unidadeInsumo === 'L') {
+              custo = quantidade * valorCompra;
+          } else if (unidadeInsumo === 'g' || unidadeInsumo === 'ml') {
+              custo = (quantidade / 1000) * valorCompra;
+          } else {
+              custo = quantidade * valorPorPorcao;
+          }
+          
+          const custoInput = item.querySelector('.edit-insumo-custo');
+          custoInput.value = `R$ ${custo.toFixed(2)}`;
+          
+          calcularCustoTotalEdit();
+      };
+      
+      // ============ CALCULAR CUSTO TOTAL ============
+      window.calcularCustoTotalEdit = function() {
+          let custoTotal = 0;
+          
+          document.querySelectorAll('#editInsumosContainer .insumo-item').forEach(item => {
+              const custoText = item.querySelector('.edit-insumo-custo').value;
+              const custo = parseFloat(custoText.replace('R$ ', '')) || 0;
+              custoTotal += custo;
+          });
+          
+          const rendimento = parseFloat(document.getElementById('editRendimento').value) || 1;
+          const custoPorPorcao = custoTotal / rendimento;
+          
+          document.getElementById('editCustoTotal').innerHTML = `R$ ${custoTotal.toFixed(2)}`;
+          document.getElementById('editCustoPorPorcao').innerHTML = `R$ ${custoPorPorcao.toFixed(2)}`;
+          
+          return { custoTotal, custoPorPorcao };
+      };
+      
+      // ============ CARREGAR INSUMOS NO SELECT ============
+      async function carregarInsumosNoSelectEdit() {
+          const setor = document.getElementById('editSetorPre').value;
+          if (!setor) return;
+          
+          const { getDocs, collection, query, where } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+          const { db } = await import("../src/db/firebase.js");
+          
+          const q = query(collection(db, "insumos"), where("setor", "==", setor));
+          const snapshot = await getDocs(q);
+          
+          insumosDisponiveis = [];
+          snapshot.forEach(doc => {
+              insumosDisponiveis.push({
+                  id: doc.id,
+                  ...doc.data()
+              });
+          });
+          
+          // Atualizar todos os selects
+          document.querySelectorAll('.edit-insumo-select').forEach(select => {
+              const valorAtual = select.value;
+              select.innerHTML = '<option value="">Selecione um insumo</option>';
+              
+              insumosDisponiveis.forEach(insumo => {
+                  const option = document.createElement('option');
+                  option.value = insumo.id;
+                  option.textContent = `${insumo.nome} (${insumo.unidade} - R$ ${(insumo.valorCompra || 0).toFixed(2)})`;
+                  option.setAttribute('data-nome', insumo.nome);
+                  option.setAttribute('data-unidade', insumo.unidade);
+                  option.setAttribute('data-valor-porcao', insumo.valorPorPorcao || 0);
+                  option.setAttribute('data-valor-compra', insumo.valorCompra || 0);
+                  select.appendChild(option);
+              });
+              
+              if (valorAtual && Array.from(select.options).some(opt => opt.value === valorAtual)) {
+                  select.value = valorAtual;
+              }
+          });
+      }
+      
+      // ============ ADICIONAR LINHA DE INSUMO ============
+      window.adicionarLinhaInsumoEdit = function(insumoExistente = null) {
+          const container = document.getElementById('editInsumosContainer');
+          const novaLinha = document.createElement('div');
+          novaLinha.className = 'insumo-item';
+          novaLinha.innerHTML = `
+              <select class="edit-insumo-select" style="width: 100%;">
+                  <option value="">Selecione um insumo</option>
+              </select>
+              <input type="number" class="edit-insumo-quantidade" placeholder="Quantidade" step="0.001" value="${insumoExistente ? insumoExistente.quantidade : 0}">
+              <select class="edit-insumo-unidade">
+                  <option value="g">g</option>
+                  <option value="kg">kg</option>
+                  <option value="ml">ml</option>
+                  <option value="L">L</option>
+                  <option value="UND">UND</option>
+              </select>
+              <input type="text" class="edit-insumo-custo" readonly placeholder="Custo" style="background:#f0f0f0;" value="${insumoExistente ? `R$ ${insumoExistente.custo.toFixed(2)}` : ''}">
+              <button type="button" class="btn-remover" onclick="removerInsumoEdit(this)">🗑️</button>
+          `;
+          container.appendChild(novaLinha);
+          
+          // Preencher select com insumos disponíveis
+          const select = novaLinha.querySelector('.edit-insumo-select');
+          insumosDisponiveis.forEach(insumo => {
+              const option = document.createElement('option');
+              option.value = insumo.id;
+              option.textContent = `${insumo.nome} (${insumo.unidade} - R$ ${(insumo.valorCompra || 0).toFixed(2)})`;
+              option.setAttribute('data-nome', insumo.nome);
+              option.setAttribute('data-unidade', insumo.unidade);
+              option.setAttribute('data-valor-porcao', insumo.valorPorPorcao || 0);
+              option.setAttribute('data-valor-compra', insumo.valorCompra || 0);
+              select.appendChild(option);
+          });
+          
+          if (insumoExistente && insumoExistente.insumoId) {
+              select.value = insumoExistente.insumoId;
+          }
+          
+          // Adicionar event listeners
+          select.addEventListener('change', () => window.calcularCustoInsumoEdit(select));
+          const quantidade = novaLinha.querySelector('.edit-insumo-quantidade');
+          quantidade.addEventListener('input', () => window.calcularCustoInsumoEdit(select));
+          
+          // Se tiver quantidade e select, calcular custo
+          if (insumoExistente && insumoExistente.quantidade > 0 && select.value) {
+              window.calcularCustoInsumoEdit(select);
+          }
+      };
+      
+      // ============ REMOVER LINHA DE INSUMO ============
+      window.removerInsumoEdit = function(botao) {
+          const container = document.getElementById('editInsumosContainer');
+          if (container.children.length > 1) {
+              botao.closest('.insumo-item').remove();
+              window.calcularCustoTotalEdit();
+          } else {
+              alert("Mantenha pelo menos um insumo!");
+          }
+      };
+      
+      // ============ EDITAR PRÉ-PREPARO ============
+      window.editarPrePreparo = async function(id) {
+          console.log("✏️ Editando ID:", id);
+          
+          const { getDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+          const { db } = await import("../src/db/firebase.js");
+          
+          try {
+              const preDoc = await getDoc(doc(db, "prePreparos", id));
+              if (preDoc.exists()) {
+                  const data = preDoc.data();
+                  
+                  // Preencher campos do modal
+                  document.getElementById('prePreparoId').value = id;
+                  document.getElementById('editNomePre').value = data.nome;
+                  document.getElementById('editSetorPre').value = data.setor;
+                  document.getElementById('editClassificacao').value = data.classificacao || '';
+                  document.getElementById('editRendimento').value = data.rendimento;
+                  document.getElementById('editUnidadeRendimento').value = data.unidadeRendimento || 'UND';
+                  
+                  // Carregar insumos disponíveis para o setor
+                  await carregarInsumosNoSelectEdit();
+                  
+                  // Limpar e recriar a lista de insumos
+                  const container = document.getElementById('editInsumosContainer');
+                  container.innerHTML = '';
+                  
+                  if (data.insumos && data.insumos.length > 0) {
+                      for (const insumo of data.insumos) {
+                          window.adicionarLinhaInsumoEdit(insumo);
+                      }
+                  } else {
+                      window.adicionarLinhaInsumoEdit();
+                  }
+                  
+                  // Calcular custos
+                  setTimeout(() => {
+                      window.calcularCustoTotalEdit();
+                  }, 100);
+                  
+                  document.getElementById('modal').style.display = 'flex';
+              }
+          } catch (error) {
+              console.error("Erro ao carregar:", error);
+              alert("Erro ao carregar dados para edição");
+          }
+      };
+      
+      // ============ SALVAR EDIÇÃO ============
+      document.getElementById('btnSalvarEdit')?.addEventListener('click', async () => {
+          const id = document.getElementById('prePreparoId').value;
+          const nome = document.getElementById('editNomePre').value.toUpperCase().trim();
+          const setor = document.getElementById('editSetorPre').value;
+          const classificacao = document.getElementById('editClassificacao').value;
+          const rendimento = parseFloat(document.getElementById('editRendimento').value);
+          const unidadeRendimento = document.getElementById('editUnidadeRendimento').value;
+          
+          // Coletar insumos
+          const insumos = [];
+          document.querySelectorAll('#editInsumosContainer .insumo-item').forEach(item => {
+              const select = item.querySelector('.edit-insumo-select');
+              const selectedOption = select.options[select.selectedIndex];
+              const quantidade = parseFloat(item.querySelector('.edit-insumo-quantidade').value) || 0;
+              const custoText = item.querySelector('.edit-insumo-custo').value;
+              
+              if (select.value && quantidade > 0) {
+                  insumos.push({
+                      insumoId: select.value,
+                      nome: selectedOption?.getAttribute('data-nome') || '',
+                      quantidade: quantidade,
+                      unidade: item.querySelector('.edit-insumo-unidade').value,
+                      custo: parseFloat(custoText.replace('R$ ', '')) || 0
+                  });
+              }
+          });
+          
+          // Calcular custos
+          let custoTotal = 0;
+          insumos.forEach(i => custoTotal += i.custo);
+          const custoPorPorcao = custoTotal / rendimento;
+          
+          const { updateDoc, doc, deleteDoc, collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+          const { db } = await import("../src/db/firebase.js");
+          
+          // Atualizar pré-preparo
+          await updateDoc(doc(db, "prePreparos", id), {
+              nome, setor, classificacao, rendimento, unidadeRendimento,
+              custoTotal, custoPorPorcao, insumos,
+              dataAtualizacao: new Date().toISOString().split('T')[0]
+          });
+          
+          // Atualizar insumo correspondente
+          const insumosQuery = query(collection(db, "insumos"), where("nome", "==", nome), where("setor", "==", setor));
+          const insumosSnapshot = await getDocs(insumosQuery);
+          
+          if (!insumosSnapshot.empty) {
+              await updateDoc(doc(db, "insumos", insumosSnapshot.docs[0].id), {
+                  valorCompra: custoPorPorcao,
+                  valorPorPorcao: custoPorPorcao,
+                  ultimaAtualizacao: new Date().toISOString().split('T')[0]
+              });
+          }
+          
+          alert("✅ Pré-preparo atualizado com sucesso!");
+          document.getElementById('modal').style.display = 'none';
+          location.reload();
+      });
+      
+      // ============ EVENTOS DO MODAL ============
+      document.getElementById('editSetorPre')?.addEventListener('change', () => {
+          carregarInsumosNoSelectEdit();
+      });
+      
+      document.getElementById('editRendimento')?.addEventListener('input', () => {
+          window.calcularCustoTotalEdit();
+      });
+      
+      document.getElementById('btnAddInsumoEdit')?.addEventListener('click', () => {
+          window.adicionarLinhaInsumoEdit();
+      });
+      
+      document.getElementById('btnFecharModal')?.addEventListener('click', () => {
+          document.getElementById('modal').style.display = 'none';
+      });
+      
+      // Fechar modal ao clicar fora
+      window.onclick = (e) => {
+          const modal = document.getElementById('modal');
+          if (e.target === modal) {
+              modal.style.display = 'none';
+          }
+      };
+      
+      console.log("✅ Sistema de edição com cálculos automáticos carregado!");
+  </script>
 
   <script type="module" src="../src/js/pre-preparo.js"></script>
 </body>

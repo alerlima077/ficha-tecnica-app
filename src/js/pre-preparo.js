@@ -1,14 +1,17 @@
 // src/js/pre-preparo.js
 import { db } from "../db/firebase.js";
 import { 
-  collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, getDoc 
+  collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+console.log("🚀 pre-preparo.js carregado!");
 
 let insumosDisponiveis = [];
 let prePreparosLista = [];
 
 function mostrarMensagem(texto, tipo) {
   const msg = document.getElementById('mensagem');
+  if (!msg) return;
   msg.textContent = texto;
   msg.style.backgroundColor = tipo === 'sucesso' ? '#28a745' : '#dc3545';
   msg.style.color = 'white';
@@ -20,7 +23,7 @@ function mostrarMensagem(texto, tipo) {
 
 // Carregar pré-preparos existentes
 async function carregarPrePreparos() {
-  const setor = document.getElementById('setorPre').value;
+  const setor = document.getElementById('setorPre')?.value;
   if (!setor) return;
   
   try {
@@ -67,24 +70,35 @@ function atualizarTabelaPrePreparos() {
     tbody.appendChild(row);
   });
   
-  // Adicionar event listeners
+  // Adicionar event listeners aos botões
   document.querySelectorAll('.btn-editar').forEach(btn => {
-    btn.addEventListener('click', () => editarPrePreparo(btn.getAttribute('data-id')));
+    btn.removeEventListener('click', () => {});
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      editarPrePreparo(btn.getAttribute('data-id'));
+    });
   });
   
   document.querySelectorAll('.btn-excluir').forEach(btn => {
-    btn.addEventListener('click', () => excluirPrePreparo(btn.getAttribute('data-id')));
+    btn.removeEventListener('click', () => {});
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      excluirPrePreparo(btn.getAttribute('data-id'));
+    });
   });
 }
 
-// EXCLUIR PRÉ-PREPARO (e o insumo correspondente)
+// FUNÇÃO DE EXCLUSÃO - VERSÃO SIMPLIFICADA E ROBUSTA
+window.excluirPrePreparo = excluirPrePreparo;
 async function excluirPrePreparo(id) {
-  if (!confirm("⚠️ Tem certeza? Isso também excluirá o insumo correspondente da lista de ingredientes!")) {
+  console.log("🗑️ EXCLUIR chamado com ID:", id);
+  
+  if (!confirm("⚠️ Tem certeza? Isso excluirá o pré-preparo e o insumo correspondente!")) {
     return;
   }
   
   try {
-    // 1. Buscar o pré-preparo para saber o nome e setor
+    // 1. Buscar o pré-preparo pelo ID
     const preDocRef = doc(db, "prePreparos", id);
     const preDocSnap = await getDoc(preDocRef);
     
@@ -94,137 +108,46 @@ async function excluirPrePreparo(id) {
     }
     
     const prePreparo = preDocSnap.data();
+    const nomePre = prePreparo.nome;
+    const setorPre = prePreparo.setor;
     
-    // 2. Excluir o insumo correspondente (com isPrePreparo true e mesmo nome/setor)
+    console.log("📦 Pré-preparo encontrado:", nomePre);
+    
+    // 2. Buscar e excluir insumos com o mesmo nome e setor
     const insumosQuery = query(
       collection(db, "insumos"),
-      where("nome", "==", prePreparo.nome),
-      where("setor", "==", prePreparo.setor),
-      where("isPrePreparo", "==", true)
+      where("nome", "==", nomePre),
+      where("setor", "==", setorPre)
     );
     const insumosSnapshot = await getDocs(insumosQuery);
     
+    console.log(`🔍 Encontrados ${insumosSnapshot.size} insumos com nome "${nomePre}"`);
+    
     for (const insumoDoc of insumosSnapshot.docs) {
       await deleteDoc(doc(db, "insumos", insumoDoc.id));
-      console.log(`✅ Insumo "${prePreparo.nome}" excluído`);
+      console.log(`✅ Insumo "${nomePre}" excluído`);
     }
     
     // 3. Excluir o pré-preparo
     await deleteDoc(doc(db, "prePreparos", id));
-    console.log(`✅ Pré-preparo "${prePreparo.nome}" excluído`);
+    console.log(`✅ Pré-preparo "${nomePre}" excluído`);
     
-    mostrarMensagem(`✅ "${prePreparo.nome}" e seu insumo foram excluídos!`, "sucesso");
+    mostrarMensagem(`✅ "${nomePre}" e seu insumo foram excluídos!`, "sucesso");
     
-    // 4. Recarregar as listas na página atual
+    // 4. Recarregar as listas
     await carregarPrePreparos();
     await carregarInsumosDisponiveis();
     
-    // 5. Opcional: disparar um evento para atualizar outras abas (se necessário)
-    // Não é necessário para a ficha técnica, pois ela recarrega ao abrir.
-    
   } catch (error) {
-    console.error("Erro ao excluir:", error);
-    mostrarMensagem("Erro ao excluir pré-preparo: " + error.message, "erro");
-  }
-}
-
-// Editar pré-preparo
-async function editarPrePreparo(id) {
-  try {
-    const preDoc = await getDocs(query(collection(db, "prePreparos")));
-    let prePreparo = null;
-    
-    for (const doc of preDoc.docs) {
-      if (doc.id === id) {
-        prePreparo = { id: doc.id, ...doc.data() };
-        break;
-      }
-    }
-    
-    if (prePreparo) {
-      document.getElementById('nomePre').value = prePreparo.nome;
-      document.getElementById('setorPre').value = prePreparo.setor;
-      document.getElementById('classificacao').value = prePreparo.classificacao || '';
-      document.getElementById('rendimento').value = prePreparo.rendimento;
-      document.getElementById('unidadeRendimento').value = prePreparo.unidadeRendimento || 'UND';
-      document.getElementById('prePreparoId').value = prePreparo.id;
-      
-      // Carregar insumos do pré-preparo
-      await carregarInsumosDisponiveis();
-      
-      // Limpar e recriar os insumos
-      const container = document.getElementById('insumosContainer');
-      container.innerHTML = '';
-      
-      if (prePreparo.insumos && prePreparo.insumos.length > 0) {
-        prePreparo.insumos.forEach((insumo, index) => {
-          adicionarLinhaInsumoComValor(insumo);
-        });
-      } else {
-        adicionarLinhaInsumo();
-      }
-      
-      document.getElementById('modalTitulo').innerHTML = '✏️ Editar Pré-Preparo';
-      document.getElementById('modal').style.display = 'flex';
-    }
-  } catch (error) {
-    console.error("Erro:", error);
-    mostrarMensagem("Erro ao carregar pré-preparo", "erro");
-  }
-}
-
-// Adicionar linha com valores pré-definidos
-function adicionarLinhaInsumoComValor(insumoExistente) {
-  const container = document.getElementById('insumosContainer');
-  const novaLinha = document.createElement('div');
-  novaLinha.className = 'insumo-item';
-  novaLinha.innerHTML = `
-    <select class="insumo-select" style="width: 100%;">
-      <option value="">Selecione um insumo</option>
-    </select>
-    <input type="number" class="insumo-quantidade" placeholder="Quantidade" step="0.001" value="${insumoExistente.quantidade || 0}">
-    <select class="insumo-unidade">
-      <option value="g">g</option>
-      <option value="kg">kg</option>
-      <option value="ml">ml</option>
-      <option value="L">L</option>
-      <option value="UND">UND</option>
-    </select>
-    <input type="text" class="insumo-custo" readonly placeholder="Custo" style="background:#f0f0f0;" value="R$ ${(insumoExistente.custo || 0).toFixed(2)}">
-    <button type="button" class="btn-remover" onclick="removerInsumo(this)">🗑️</button>
-  `;
-  container.appendChild(novaLinha);
-  
-  const select = novaLinha.querySelector('.insumo-select');
-  insumosDisponiveis.forEach(insumo => {
-    const option = document.createElement('option');
-    option.value = insumo.id;
-    option.textContent = `${insumo.nome} (${insumo.unidade} - R$ ${(insumo.valorCompra || 0).toFixed(2)})`;
-    option.setAttribute('data-nome', insumo.nome);
-    option.setAttribute('data-unidade', insumo.unidade);
-    option.setAttribute('data-valor-porcao', insumo.valorPorPorcao || 0);
-    option.setAttribute('data-valor-compra', insumo.valorCompra || 0);
-    select.appendChild(option);
-  });
-  
-  if (insumoExistente.insumoId) {
-    select.value = insumoExistente.insumoId;
-  }
-  
-  select.addEventListener('change', () => calcularCustoInsumo(select));
-  const quantidade = novaLinha.querySelector('.insumo-quantidade');
-  quantidade.addEventListener('input', () => calcularCustoInsumo(select));
-  
-  if (insumoExistente.custo) {
-    const custoInput = novaLinha.querySelector('.insumo-custo');
-    custoInput.value = `R$ ${insumoExistente.custo.toFixed(2)}`;
+    console.error("❌ Erro ao excluir:", error);
+    mostrarMensagem("Erro ao excluir: " + error.message, "erro");
   }
 }
 
 // Carregar insumos disponíveis
 async function carregarInsumosDisponiveis() {
   try {
-    const setor = document.getElementById('setorPre').value;
+    const setor = document.getElementById('setorPre')?.value;
     if (!setor) return;
     
     const q = query(collection(db, "insumos"), where("setor", "==", setor));
@@ -269,6 +192,8 @@ function atualizarSelectsInsumos() {
 
 function adicionarLinhaInsumo() {
   const container = document.getElementById('insumosContainer');
+  if (!container) return;
+  
   const novaLinha = document.createElement('div');
   novaLinha.className = 'insumo-item';
   novaLinha.innerHTML = `
@@ -348,11 +273,14 @@ function calcularCustoTotal() {
     custoTotal += custo;
   });
   
-  const rendimento = parseFloat(document.getElementById('rendimento').value) || 1;
+  const rendimento = parseFloat(document.getElementById('rendimento')?.value) || 1;
   const custoPorPorcao = custoTotal / rendimento;
   
-  document.getElementById('custoTotal').innerHTML = `R$ ${custoTotal.toFixed(2)}`;
-  document.getElementById('custoPorPorcao').innerHTML = `R$ ${custoPorPorcao.toFixed(2)}`;
+  const custoTotalEl = document.getElementById('custoTotal');
+  const custoPorPorcaoEl = document.getElementById('custoPorPorcao');
+  
+  if (custoTotalEl) custoTotalEl.innerHTML = `R$ ${custoTotal.toFixed(2)}`;
+  if (custoPorPorcaoEl) custoPorPorcaoEl.innerHTML = `R$ ${custoPorPorcao.toFixed(2)}`;
   
   return { custoTotal, custoPorPorcao };
 }
@@ -383,12 +311,12 @@ function coletarInsumos() {
 async function salvarPrePreparo(event) {
   event.preventDefault();
   
-  const prePreparoId = document.getElementById('prePreparoId').value;
-  const nome = document.getElementById('nomePre').value.toUpperCase();
-  const setor = document.getElementById('setorPre').value;
-  const classificacao = document.getElementById('classificacao').value;
-  const rendimento = parseFloat(document.getElementById('rendimento').value);
-  const unidadeRendimento = document.getElementById('unidadeRendimento').value;
+  const prePreparoId = document.getElementById('prePreparoId')?.value;
+  const nome = document.getElementById('nomePre')?.value.toUpperCase().trim();
+  const setor = document.getElementById('setorPre')?.value;
+  const classificacao = document.getElementById('classificacao')?.value;
+  const rendimento = parseFloat(document.getElementById('rendimento')?.value);
+  const unidadeRendimento = document.getElementById('unidadeRendimento')?.value;
   const insumos = coletarInsumos();
   const { custoTotal, custoPorPorcao } = calcularCustoTotal();
   
@@ -404,7 +332,6 @@ async function salvarPrePreparo(event) {
   
   try {
     if (prePreparoId) {
-      // Atualizar pré-preparo existente
       await updateDoc(doc(db, "prePreparos", prePreparoId), {
         nome: nome,
         setor: setor,
@@ -417,26 +344,19 @@ async function salvarPrePreparo(event) {
         dataAtualizacao: new Date().toISOString().split('T')[0]
       });
       
-      // Atualizar insumo correspondente
-      const insumosQuery = query(
-        collection(db, "insumos"), 
-        where("nome", "==", nome),
-        where("setor", "==", setor),
-        where("isPrePreparo", "==", true)
-      );
+      const insumosQuery = query(collection(db, "insumos"), where("prePreparoId", "==", prePreparoId));
       const insumosSnapshot = await getDocs(insumosQuery);
       
       if (!insumosSnapshot.empty) {
         await updateDoc(doc(db, "insumos", insumosSnapshot.docs[0].id), {
+          nome: nome,
           valorCompra: custoPorPorcao,
-          valorPorPorcao: custoPorPorcao,
-          ultimaAtualizacao: new Date().toISOString().split('T')[0]
+          valorPorPorcao: custoPorPorcao
         });
       }
       
       mostrarMensagem(`✅ Pré-preparo "${nome}" atualizado!`, "sucesso");
     } else {
-      // Criar novo pré-preparo
       const prePreparoRef = await addDoc(collection(db, "prePreparos"), {
         nome: nome,
         setor: setor,
@@ -449,45 +369,24 @@ async function salvarPrePreparo(event) {
         dataCriacao: new Date().toISOString().split('T')[0]
       });
       
-      // Verificar se já existe insumo com este nome
-      const insumosQuery = query(
-        collection(db, "insumos"), 
-        where("nome", "==", nome),
-        where("setor", "==", setor)
-      );
-      const insumosExistentes = await getDocs(insumosQuery);
+      await addDoc(collection(db, "insumos"), {
+        setor: setor,
+        nome: nome,
+        unidade: unidadeRendimento,
+        fatorRendimento: 100,
+        valorCompra: custoPorPorcao,
+        valorPorPorcao: custoPorPorcao,
+        ultimaAtualizacao: new Date().toISOString().split('T')[0],
+        isPrePreparo: true,
+        prePreparoId: prePreparoRef.id
+      });
       
-      if (insumosExistentes.empty) {
-        await addDoc(collection(db, "insumos"), {
-          setor: setor,
-          nome: nome,
-          unidade: unidadeRendimento,
-          fatorRendimento: 100,
-          valorCompra: custoPorPorcao,
-          valorPorPorcao: custoPorPorcao,
-          ultimaAtualizacao: new Date().toISOString().split('T')[0],
-          isPrePreparo: true,
-          prePreparoId: prePreparoRef.id
-        });
-      } else {
-        await updateDoc(doc(db, "insumos", insumosExistentes.docs[0].id), {
-          valorCompra: custoPorPorcao,
-          valorPorPorcao: custoPorPorcao,
-          ultimaAtualizacao: new Date().toISOString().split('T')[0]
-        });
-      }
-      
-      mostrarMensagem(`✅ Pré-preparo "${nome}" salvo! Agora disponível como insumo.`, "sucesso");
+      mostrarMensagem(`✅ Pré-preparo "${nome}" salvo!`, "sucesso");
     }
     
     fecharModal();
     carregarPrePreparos();
     carregarInsumosDisponiveis();
-    
-    document.getElementById('preForm').reset();
-    document.getElementById('insumosContainer').innerHTML = '';
-    adicionarLinhaInsumo();
-    document.getElementById('prePreparoId').value = '';
     
   } catch (error) {
     console.error("Erro:", error);
@@ -496,16 +395,29 @@ async function salvarPrePreparo(event) {
 }
 
 function fecharModal() {
-  document.getElementById('modal').style.display = 'none';
-  document.getElementById('preForm').reset();
-  document.getElementById('insumosContainer').innerHTML = '';
-  adicionarLinhaInsumo();
-  document.getElementById('prePreparoId').value = '';
-  document.getElementById('modalTitulo').innerHTML = '➕ Novo Pré-Preparo';
+  const modal = document.getElementById('modal');
+  if (modal) modal.style.display = 'none';
+  
+  const form = document.getElementById('preForm');
+  if (form) form.reset();
+  
+  const container = document.getElementById('insumosContainer');
+  if (container) {
+    container.innerHTML = '';
+    adicionarLinhaInsumo();
+  }
+  
+  const prePreparoId = document.getElementById('prePreparoId');
+  if (prePreparoId) prePreparoId.value = '';
+  
+  const modalTitulo = document.getElementById('modalTitulo');
+  if (modalTitulo) modalTitulo.innerHTML = '➕ Novo Pré-Preparo';
 }
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', () => {
+  console.log("📄 DOM carregado, inicializando...");
+  
   const setorSelect = document.getElementById('setorPre');
   if (setorSelect) {
     setorSelect.addEventListener('change', () => {
@@ -526,12 +438,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnAbrirModal = document.getElementById('btnAbrirModal');
   if (btnAbrirModal) {
     btnAbrirModal.onclick = () => {
-      document.getElementById('modal').style.display = 'flex';
-      document.getElementById('preForm').reset();
-      document.getElementById('insumosContainer').innerHTML = '';
-      adicionarLinhaInsumo();
-      document.getElementById('prePreparoId').value = '';
-      document.getElementById('modalTitulo').innerHTML = '➕ Novo Pré-Preparo';
+      const modal = document.getElementById('modal');
+      if (modal) modal.style.display = 'flex';
+      
+      const formPre = document.getElementById('preForm');
+      if (formPre) formPre.reset();
+      
+      const container = document.getElementById('insumosContainer');
+      if (container) {
+        container.innerHTML = '';
+        adicionarLinhaInsumo();
+      }
+      
+      const prePreparoId = document.getElementById('prePreparoId');
+      if (prePreparoId) prePreparoId.value = '';
+      
+      const modalTitulo = document.getElementById('modalTitulo');
+      if (modalTitulo) modalTitulo.innerHTML = '➕ Novo Pré-Preparo';
     };
   }
   
@@ -539,7 +462,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnFecharModal) btnFecharModal.onclick = fecharModal;
   
   window.onclick = (e) => {
-    if (e.target === document.getElementById('modal')) fecharModal();
+    const modal = document.getElementById('modal');
+    if (e.target === modal) fecharModal();
   };
   
   setTimeout(() => {

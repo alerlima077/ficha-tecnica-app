@@ -233,15 +233,20 @@
           <span class="emoji">📦</span>
           <span>Insumos</span>
         </a>
+        <a href="ficha-tecnica.html" class="nav-btn nova-ficha active">
+          <span class="emoji">📝</span>
+          <span>Ficha Técnica</span>
+        </a>
         <a href="pre-preparo.html" class="nav-btn">
           <span class="emoji">🥣</span>
           <span>Pré-Preparo</span>
         </a>
-        <a href="ficha-tecnica.html" class="nav-btn nova-ficha active">
-          <span class="emoji">📝</span>
-          <span>Nova Ficha</span>
+        <a href="../pages/cardapio.html" class="nav-btn">
+          <span class="emoji">📋</span>
+          <span>Cardápio</span>
         </a>
       </nav>
+      
     </header>
 
     <div class="ficha-container">
@@ -358,6 +363,175 @@
       <p>© 2026 Júlio's - Sistema de Ficha Técnica</p>
     </footer>
   </div>
+
+  <script type="module">
+      // Verificar se há parâmetro de edição na URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const editarId = urlParams.get('editar');
+      
+      if (editarId) {
+          console.log("✏️ Editando produto ID:", editarId);
+          document.getElementById('form-produto').style.display = 'block';
+          
+          // Importar Firebase
+          const { getDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+          const { db } = await import("../src/db/firebase.js");
+          
+          // Buscar produto
+          const produtoRef = doc(db, "produtos", editarId);
+          const produtoSnap = await getDoc(produtoRef);
+          
+          if (produtoSnap.exists()) {
+              const produto = produtoSnap.data();
+              
+              // Preencher campos do formulário
+              document.getElementById('setor').value = produto.setor || '';
+              document.getElementById('nome').value = produto.nome || '';
+              document.getElementById('precoVenda').value = produto.precoVenda || '';
+              document.getElementById('tempoPreparo').value = produto.tempoPreparo || '';
+              document.getElementById('rendimento').value = produto.rendimento || 1;
+              document.getElementById('responsavel').value = produto.responsavel || '';
+              
+              // Carregar categorias baseado no setor
+              if (produto.setor) {
+                  carregarCategoriasPorSetor(produto.setor, produto.categoria);
+              }
+              
+              // Carregar insumos do produto
+              if (produto.insumos && produto.insumos.length > 0) {
+                  await carregarInsumosParaEdicao(produto.insumos);
+              }
+              
+              // Mudar texto do botão
+              const btnSalvar = document.querySelector('.btn-salvar-ficha');
+              if (btnSalvar) {
+                  btnSalvar.textContent = "✏️ Atualizar Produto";
+                  btnSalvar.style.background = "linear-gradient(135deg, #28a745, #20c997)";
+              }
+              
+              // Adicionar campo hidden com ID
+              const form = document.getElementById('fichaForm');
+              const hiddenId = document.createElement('input');
+              hiddenId.type = 'hidden';
+              hiddenId.id = 'produtoId';
+              hiddenId.value = editarId;
+              form.appendChild(hiddenId);
+              
+              // Recarregar insumos disponíveis
+              await carregarInsumosDisponiveis();
+              
+              alert(`✅ Produto "${produto.nome}" carregado para edição!`);
+          } else {
+              alert("❌ Produto não encontrado!");
+          }
+      }
+      
+      // Função auxiliar para carregar categorias
+      async function carregarCategoriasPorSetor(setor, categoriaSelecionada) {
+          const categoriasPorSetor = {
+              pizzaria: ['pizza', 'rodizio', 'macarrao'],
+              restaurante: ['lanche', 'porcao', 'salgado', 'pf', 'marmita', 'omelete', 'nhoque', 'sobremesa', 'buteco'],
+              padaria: ['pao', 'rosca', 'sonho']
+          };
+          
+          const categorias = categoriasPorSetor[setor] || [];
+          const categoriaSelect = document.getElementById('categoria');
+          
+          categoriaSelect.innerHTML = '<option value="">Selecione uma categoria</option>';
+          categorias.forEach(cat => {
+              const option = document.createElement('option');
+              option.value = cat;
+              option.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+              if (cat === categoriaSelecionada) {
+                  option.selected = true;
+              }
+              categoriaSelect.appendChild(option);
+          });
+      }
+      
+      // Função para carregar insumos na edição
+      async function carregarInsumosParaEdicao(insumosLista) {
+          const container = document.getElementById('insumosContainer');
+          container.innerHTML = '';
+          
+          for (const insumo of insumosLista) {
+              const novaLinha = document.createElement('div');
+              novaLinha.className = 'insumo-item';
+              novaLinha.innerHTML = `
+                  <select class="insumo-select" style="width: 100%;">
+                      <option value="">Selecione um insumo</option>
+                  </select>
+                  <input type="number" class="insumo-quantidade" placeholder="Quantidade" step="0.001" value="${insumo.quantidade}">
+                  <select class="insumo-unidade">
+                      <option value="g">g</option>
+                      <option value="kg">kg</option>
+                      <option value="ml">ml</option>
+                      <option value="L">L</option>
+                      <option value="un">un</option>
+                  </select>
+                  <input type="text" class="insumo-custo" readonly placeholder="Custo (R$)" style="background:#f0f0f0;" value="R$ ${insumo.custo.toFixed(2)}">
+                  <button type="button" class="btn-remover-insumo" onclick="removerInsumo(this)">🗑️</button>
+              `;
+              container.appendChild(novaLinha);
+              
+              // Selecionar o insumo correto
+              const select = novaLinha.querySelector('.insumo-select');
+              await preencherSelectInsumo(select, insumo.insumoId, insumo.nome);
+          }
+      }
+      
+      async function preencherSelectInsumo(select, insumoId, nomeInsumo) {
+          const { getDocs, collection, query, where } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+          const { db } = await import("../src/db/firebase.js");
+          
+          const setor = document.getElementById('setor').value;
+          if (!setor) return;
+          
+          const q = query(collection(db, "insumos"), where("setor", "==", setor));
+          const snapshot = await getDocs(q);
+          
+          select.innerHTML = '<option value="">Selecione um insumo</option>';
+          snapshot.forEach(doc => {
+              const insumo = doc.data();
+              const option = document.createElement('option');
+              option.value = doc.id;
+              option.textContent = `${insumo.nome} (${insumo.unidade} - R$ ${(insumo.valorCompra || 0).toFixed(2)})`;
+              option.setAttribute('data-nome', insumo.nome);
+              option.setAttribute('data-unidade', insumo.unidade);
+              option.setAttribute('data-valor-porcao', insumo.valorPorPorcao || 0);
+              option.setAttribute('data-valor-compra', insumo.valorCompra || 0);
+              select.appendChild(option);
+          });
+          
+          if (insumoId) {
+              select.value = insumoId;
+          }
+          
+          select.addEventListener('change', () => calcularCustoInsumo(select));
+          const quantidade = select.closest('.insumo-item').querySelector('.insumo-quantidade');
+          quantidade.addEventListener('input', () => calcularCustoInsumo(select));
+          calcularCustoInsumo(select);
+      }
+      
+      async function carregarInsumosDisponiveis() {
+          const { getDocs, collection, query, where } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+          const { db } = await import("../src/db/firebase.js");
+          
+          const setor = document.getElementById('setor').value;
+          if (!setor) return;
+          
+          const q = query(collection(db, "insumos"), where("setor", "==", setor));
+          const snapshot = await getDocs(q);
+          
+          window.insumosDisponiveis = [];
+          snapshot.forEach(doc => {
+              window.insumosDisponiveis.push({
+                  id: doc.id,
+                  ...doc.data()
+              });
+          });
+      }
+  </script>
 
   <script type="module" src="../src/js/ficha-tecnica.js"></script>
 </body>
