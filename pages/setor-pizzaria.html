@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pizzaria - Júlio's</title>
+  <link rel="stylesheet" href="../src/css/style.css">
+  <link rel="manifest" href="../public/manifest.json">
+  <style>
+    /* Estilos específicos da Pizzaria */
+    .setor-header {
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+    }
+    .categoria-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .categoria-card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.3s;
+      border-left: 5px solid #e74c3c;
+    }
+    .categoria-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-hover);
+    }
+    .categoria-icon {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+    .categoria-nome {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: var(--dark);
+    }
+    .categoria-count {
+      font-size: 0.8rem;
+      color: var(--gray);
+      margin-top: 5px;
+    }
+    .btn-acao {
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 50px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 20px;
+      transition: all 0.3s;
+    }
+    .btn-acao:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <div class="logo-container">
+        <div class="logo">
+          <img src="../src/assets/logo.png" alt="Júlio's">
+        </div>
+        <div class="header-info">
+          <h1>🍕 Pizzaria</h1>
+          <span class="subtitle">Júlio's</span>
+        </div>
+      </div>
+      <nav class="main-nav">
+        <a href="../public/index.html" class="nav-btn">
+          <span class="emoji">🏠</span>
+          <span>Dashboard</span>
+        </a>
+        <a href="insumos.html?setor=pizzaria" class="nav-btn">
+          <span class="emoji">📦</span>
+          <span>Insumos</span>
+        </a>
+        <a href="ficha-tecnica.html?setor=pizzaria" class="nav-btn nova-ficha">
+          <span class="emoji">📝</span>
+          <span>Nova Ficha</span>
+        </a>
+      </nav>
+    </header>
+
+    <div class="setor-header" style="background: linear-gradient(135deg, #e74c3c, #c0392b); border-radius: 20px; padding: 30px; margin-bottom: 30px; color: white;">
+      <h2>🍕 Setor Pizzaria</h2>
+      <p>Gerencie pizzas, rodízio e macarrão ao vivo</p>
+    </div>
+
+    <section>
+      <h3 style="margin-bottom: 20px; color: white;">📋 Categorias</h3>
+      <div class="categoria-grid" id="categorias-container">
+        <!-- Categorias via JS -->
+      </div>
+    </section>
+
+    <footer>
+      <p>© 2026 Júlio's - Sistema de Ficha Técnica</p>
+    </footer>
+  </div>
+
+  <script type="module">
+    import { db } from "../src/db/firebase.js";
+    import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    
+    const categorias = [
+      { nome: "🍕 Pizzas", icone: "🍕", rota: "produtos.html?categoria=pizzas" },
+      { nome: "🔄 Rodízio de Pizzas", icone: "🔄", rota: "produtos.html?categoria=rodizio" },
+      { nome: "🍝 Macarrão ao vivo", icone: "🍝", rota: "produtos.html?categoria=macarrao" }
+    ];
+    
+    async function carregarCategorias() {
+      const container = document.getElementById('categorias-container');
+      container.innerHTML = '';
+      
+      for (const cat of categorias) {
+        const q = query(collection(db, "produtos"), where("setor", "==", "pizzaria"), where("categoria", "==", cat.nome.replace(/[^a-z]/gi, '').toLowerCase()));
+        const snapshot = await getDocs(q);
+        
+        const card = document.createElement('div');
+        card.className = 'categoria-card';
+        card.onclick = () => window.location.href = cat.rota;
+        card.innerHTML = `
+          <div class="categoria-icon">${cat.icone}</div>
+          <div class="categoria-nome">${cat.nome}</div>
+          <div class="categoria-count">${snapshot.size} produtos</div>
+        `;
+        container.appendChild(card);
+      }
+      
+      // Botão adicional
+      const btnCard = document.createElement('div');
+      btnCard.className = 'categoria-card';
+      btnCard.style.borderLeftColor = '#27ae60';
+      btnCard.style.background = '#f8f9fa';
+      btnCard.onclick = () => window.location.href = 'ficha-tecnica.html?setor=pizzaria';
+      btnCard.innerHTML = `
+        <div class="categoria-icon">➕</div>
+        <div class="categoria-nome">Nova Ficha Técnica</div>
+        <div class="categoria-count">Cadastrar novo produto</div>
+      `;
+      container.appendChild(btnCard);
+    }
+    
+    carregarCategorias();
+  </script>
+</body>
+</html>

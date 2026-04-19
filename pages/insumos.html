@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Insumos - Júlio's</title>
+  <link rel="stylesheet" href="../src/css/style.css">
+  <style>
+    /* Estilos específicos para página de insumos */
+    .insumos-container {
+      background: white;
+      border-radius: var(--radius);
+      padding: 25px;
+      box-shadow: var(--shadow);
+    }
+    
+    .insumos-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid var(--light);
+    }
+    
+    .insumos-header h2 {
+      color: var(--dark);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .data-atualizacao {
+      background: var(--light);
+      padding: 8px 16px;
+      border-radius: 50px;
+      font-size: 0.8rem;
+      color: var(--gray);
+    }
+    
+    .btn-add-insumo {
+      background: linear-gradient(135deg, #28a745, #20c997);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 50px;
+      cursor: pointer;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s;
+      margin-bottom: 20px;
+    }
+    
+    .btn-add-insumo:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+    }
+    
+    .tabela-insumos {
+      width: 100%;
+      overflow-x: auto;
+    }
+    
+    .tabela-insumos table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .tabela-insumos th {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 15px;
+      text-align: left;
+      font-weight: 600;
+    }
+    
+    .tabela-insumos td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .tabela-insumos tr:hover {
+      background: #f8f9fa;
+    }
+    
+    .valor-compra, .valor-porcao {
+      font-family: monospace;
+      font-weight: bold;
+    }
+    
+    .btn-editar {
+      background: #ff6600;
+      color: white;
+      border: none;
+      padding: 5px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-right: 5px;
+    }
+    
+    .btn-excluir {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 5px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    
+    .filtro-setor {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .btn-setor {
+      background: var(--light);
+      color: var(--dark);
+      border: none;
+      padding: 8px 20px;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .btn-setor.ativo {
+      background: linear-gradient(135deg, #ff6600, #ff9933);
+      color: white;
+    }
+    
+    .btn-setor:hover {
+      transform: translateY(-2px);
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    
+    .modal-content {
+      background: white;
+      border-radius: var(--radius);
+      padding: 30px;
+      max-width: 500px;
+      width: 90%;
+    }
+    
+    .modal-content h3 {
+      margin-bottom: 20px;
+      color: var(--dark);
+    }
+    
+    .modal-content label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #555;
+    }
+    
+    .modal-content input,
+    .modal-content select {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+    
+    .modal-buttons button {
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: none;
+      font-weight: bold;
+    }
+    
+    .btn-salvar {
+      background: #28a745;
+      color: white;
+    }
+    
+    .btn-cancelar {
+      background: #dc3545;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <div class="logo-container">
+        <div class="logo">
+          <img src="../src/assets/logo.png" alt="Júlio's">
+        </div>
+        <div class="header-info">
+          <h1>📦 Insumos</h1>
+          <span class="subtitle">Júlio's</span>
+        </div>
+      </div>
+      <nav class="main-nav">
+        <a href="../public/index.html" class="nav-btn">
+          <span class="emoji">🏠</span>
+          <span>Dashboard</span>
+        </a>
+        <a href="insumos.html" class="nav-btn insumos active">
+          <span class="emoji">📦</span>
+          <span>Insumos</span>
+        </a>
+      </nav>
+    </header>
+
+    <div class="insumos-container">
+      <div class="insumos-header">
+        <h2>
+          <span>🥗</span>
+          Cadastro de Insumos
+        </h2>
+        <div class="data-atualizacao" id="dataAtualizacao">
+          📅 Última atualização: --
+        </div>
+      </div>
+
+      <div class="filtro-setor">
+        <button class="btn-setor ativo" data-setor="pizzaria">🍕 Pizzaria</button>
+        <button class="btn-setor" data-setor="restaurante">🍔 Restaurante</button>
+        <button class="btn-setor" data-setor="padaria">🥖 Padaria</button>
+      </div>
+
+      <button class="btn-add-insumo" id="btnAbrirModal">
+        <span>➕</span> Adicionar Insumo
+      </button>
+
+      <div class="tabela-insumos">
+        <table id="tabelaInsumos">
+          <thead>
+            <tr>
+              <th>Insumo</th>
+              <th>Unidade</th>
+              <th>Fator Rendimento</th>
+              <th>Valor Compra</th>
+              <th>Valor Por Porção</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="insumosLista">
+            <tr><td colspan="6" style="text-align: center;">Carregando...</td</tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Modal para adicionar/editar insumo -->
+    <div id="modal" class="modal">
+      <div class="modal-content">
+        <h3 id="modalTitulo">➕ Adicionar Insumo</h3>
+        <input type="hidden" id="insumoId">
+        
+        <label>Setor:</label>
+        <select id="modalSetor">
+          <option value="pizzaria">🍕 Pizzaria</option>
+          <option value="restaurante">🍔 Restaurante</option>
+          <option value="padaria">🥖 Padaria</option>
+        </select>
+        
+        <label>Nome do Insumo:</label>
+        <input type="text" id="modalNome" placeholder="Ex: MUSSARELA">
+        
+        <label>Unidade de Medida:</label>
+        <select id="modalUnidade">
+          <option value="KG">KG (Quilograma)</option>
+          <option value="L">L (Litro)</option>
+          <option value="UND">UND (Unidade)</option>
+          <option value="g">g (Grama)</option>
+          <option value="ml">ml (Mililitro)</option>
+        </select>
+        
+        <label>Fator de Rendimento (%):</label>
+        <input type="number" id="modalFator" value="100" step="1">
+        
+        <label>Valor de Compra (R$ por KG/L/UND):</label>
+        <input type="number" id="modalValorCompra" step="0.01" placeholder="0,00">
+        
+        <div class="modal-buttons">
+          <button class="btn-cancelar" id="btnFecharModal">Cancelar</button>
+          <button class="btn-salvar" id="btnSalvarInsumo">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>© 2026 Júlio's - Sistema de Ficha Técnica</p>
+    </footer>
+  </div>
+
+  <script type="module" src="../src/js/insumos.js"></script>
+</body>
+</html>
