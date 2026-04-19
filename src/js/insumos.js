@@ -1,19 +1,20 @@
 // src/js/insumos.js
 import { db } from "../db/firebase.js";
 import { 
-  collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where 
+  collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+console.log("✅ insumos.js carregado com sucesso!");
 
 let setorAtual = "pizzaria";
 
-// Formatar data
 function formatarData() {
   const hoje = new Date();
   return hoje.toLocaleDateString('pt-BR');
 }
 
-// Calcular valor por porção (por grama/litro)
 function calcularValorPorPorcao(valorCompra, unidade) {
+  if (!valorCompra) return 0;
   if (unidade === "KG") return valorCompra / 1000;
   if (unidade === "L") return valorCompra / 1000;
   if (unidade === "g") return valorCompra;
@@ -21,14 +22,23 @@ function calcularValorPorPorcao(valorCompra, unidade) {
   return valorCompra / 1000;
 }
 
-// Carregar insumos
 async function carregarInsumos() {
+  console.log("🔄 Carregando insumos para setor:", setorAtual);
+  
   const tbody = document.getElementById("insumosLista");
-  tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Carregando...</td</tr>';
+  if (!tbody) {
+    console.error("❌ Elemento 'insumosLista' não encontrado!");
+    return;
+  }
+  
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">🔄 Carregando...</td</tr>';
   
   try {
-    const q = query(collection(db, "insumos"), where("setor", "==", setorAtual));
+    const insumosRef = collection(db, "insumos");
+    const q = query(insumosRef, where("setor", "==", setorAtual));
     const snapshot = await getDocs(q);
+    
+    console.log(`📊 Encontrados ${snapshot.size} insumos`);
     
     if (snapshot.empty) {
       tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">📭 Nenhum insumo cadastrado neste setor</td</tr>';
@@ -38,14 +48,23 @@ async function carregarInsumos() {
     tbody.innerHTML = "";
     snapshot.forEach(docSnap => {
       const insumo = docSnap.data();
-      const row = document.createElement("tr");
       
+      // Valores seguros com fallback
+      const nome = insumo.nome || "Sem nome";
+      const unidade = insumo.unidade || "KG";
+      const fatorRendimento = insumo.fatorRendimento || 100;
+      const valorCompra = typeof insumo.valorCompra === 'number' ? insumo.valorCompra : 0;
+      const valorPorPorcao = typeof insumo.valorPorPorcao === 'number' ? insumo.valorPorPorcao : 0;
+      
+      console.log(`   - ${nome}: R$ ${valorCompra.toFixed(2)}`);
+      
+      const row = document.createElement("tr");
       row.innerHTML = `
-        <td><strong>${insumo.nome}</strong></td>
-        <td>${insumo.unidade}</td>
-        <td>${insumo.fatorRendimento}%</td>
-        <td class="valor-compra">R$ ${insumo.valorCompra.toFixed(2)}</td>
-        <td class="valor-porcao">R$ ${insumo.valorPorPorcao.toFixed(4)}</td>
+        <td><strong>${nome}</strong></td>
+        <td>${unidade}</td>
+        <td>${fatorRendimento}%</td>
+        <td class="valor-compra">R$ ${valorCompra.toFixed(2)}</td>
+        <td class="valor-porcao">R$ ${valorPorPorcao.toFixed(4)}</td>
         <td>
           <button class="btn-editar" data-id="${docSnap.id}">✏️ Editar</button>
           <button class="btn-excluir" data-id="${docSnap.id}">🗑️ Excluir</button>
@@ -54,7 +73,7 @@ async function carregarInsumos() {
       tbody.appendChild(row);
     });
     
-    // Adicionar event listeners para os botões
+    // Adicionar event listeners
     document.querySelectorAll('.btn-editar').forEach(btn => {
       btn.addEventListener('click', () => editarInsumo(btn.getAttribute('data-id')));
     });
@@ -63,22 +82,29 @@ async function carregarInsumos() {
       btn.addEventListener('click', () => excluirInsumo(btn.getAttribute('data-id')));
     });
     
-    document.getElementById("dataAtualizacao").innerHTML = `📅 Última atualização: ${formatarData()}`;
+    const dataEl = document.getElementById("dataAtualizacao");
+    if (dataEl) dataEl.innerHTML = `📅 Última atualização: ${formatarData()}`;
+    
   } catch (error) {
-    console.error("Erro:", error);
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">❌ Erro ao carregar insumos</td</tr>';
+    console.error("❌ ERRO DETALHADO:", error);
+    const tbody = document.getElementById("insumosLista");
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red;">
+        ❌ Erro ao carregar insumos<br>
+        <small>${error.message}</small>
+      </td></tr>`;
+    }
   }
 }
 
-// Adicionar insumo
 async function adicionarInsumo() {
-  const nome = document.getElementById("modalNome").value.toUpperCase().trim();
-  const unidade = document.getElementById("modalUnidade").value;
-  const fatorRendimento = parseInt(document.getElementById("modalFator").value);
-  const valorCompra = parseFloat(document.getElementById("modalValorCompra").value);
-  const setor = document.getElementById("modalSetor").value;
+  const nome = document.getElementById("modalNome")?.value.toUpperCase().trim();
+  const unidade = document.getElementById("modalUnidade")?.value;
+  const fatorRendimento = parseInt(document.getElementById("modalFator")?.value);
+  const valorCompra = parseFloat(document.getElementById("modalValorCompra")?.value);
+  const setor = document.getElementById("modalSetor")?.value;
   
-  if (!nome || !valorCompra) {
+  if (!nome || !valorCompra || isNaN(valorCompra)) {
     alert("⚠️ Preencha todos os campos obrigatórios!");
     return;
   }
@@ -90,7 +116,7 @@ async function adicionarInsumo() {
       setor: setor,
       nome: nome,
       unidade: unidade,
-      fatorRendimento: fatorRendimento,
+      fatorRendimento: fatorRendimento || 100,
       valorCompra: valorCompra,
       valorPorPorcao: valorPorPorcao,
       ultimaAtualizacao: formatarData()
@@ -100,37 +126,30 @@ async function adicionarInsumo() {
     fecharModal();
     carregarInsumos();
   } catch (error) {
-    console.error("Erro:", error);
-    alert("❌ Erro ao adicionar insumo");
+    console.error("Erro ao adicionar:", error);
+    alert("❌ Erro ao adicionar insumo: " + error.message);
   }
 }
 
-// Editar insumo
 async function editarInsumo(id) {
   try {
     const docRef = doc(db, "insumos", id);
-    const docSnap = await getDocs(query(collection(db, "insumos")));
-    let insumo = null;
+    const docSnap = await getDoc(docRef);
     
-    for (const d of docSnap.docs) {
-      if (d.id === id) {
-        insumo = { id: d.id, ...d.data() };
-        break;
-      }
-    }
-    
-    if (insumo) {
+    if (docSnap.exists()) {
+      const insumo = { id: docSnap.id, ...docSnap.data() };
+      
       document.getElementById("insumoId").value = insumo.id;
-      document.getElementById("modalSetor").value = insumo.setor;
-      document.getElementById("modalNome").value = insumo.nome;
-      document.getElementById("modalUnidade").value = insumo.unidade;
-      document.getElementById("modalFator").value = insumo.fatorRendimento;
-      document.getElementById("modalValorCompra").value = insumo.valorCompra;
+      document.getElementById("modalSetor").value = insumo.setor || "pizzaria";
+      document.getElementById("modalNome").value = insumo.nome || "";
+      document.getElementById("modalUnidade").value = insumo.unidade || "KG";
+      document.getElementById("modalFator").value = insumo.fatorRendimento || 100;
+      document.getElementById("modalValorCompra").value = insumo.valorCompra || 0;
       document.getElementById("modalTitulo").innerHTML = "✏️ Editar Insumo";
       document.getElementById("modal").style.display = "flex";
       
       const btnSalvar = document.getElementById("btnSalvarInsumo");
-      const novoSalvar = async () => {
+      btnSalvar.onclick = async () => {
         const novoValorCompra = parseFloat(document.getElementById("modalValorCompra").value);
         const novoValorPorPorcao = calcularValorPorPorcao(novoValorCompra, insumo.unidade);
         
@@ -148,8 +167,6 @@ async function editarInsumo(id) {
         fecharModal();
         carregarInsumos();
       };
-      
-      btnSalvar.onclick = novoSalvar;
     }
   } catch (error) {
     console.error("Erro:", error);
@@ -157,7 +174,6 @@ async function editarInsumo(id) {
   }
 }
 
-// Excluir insumo
 async function excluirInsumo(id) {
   if (confirm("⚠️ Tem certeza que deseja excluir este insumo?")) {
     try {
@@ -171,7 +187,6 @@ async function excluirInsumo(id) {
   }
 }
 
-// Fechar modal
 function fecharModal() {
   document.getElementById("modal").style.display = "none";
   document.getElementById("insumoId").value = "";
@@ -184,23 +199,24 @@ function fecharModal() {
   btnSalvar.onclick = adicionarInsumo;
 }
 
-// Event listeners
+// Inicialização
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("🚀 Página carregada, iniciando...");
   carregarInsumos();
   
-  document.getElementById("btnAbrirModal").onclick = () => {
-    document.getElementById("modal").style.display = "flex";
-  };
+  const btnAbrir = document.getElementById("btnAbrirModal");
+  if (btnAbrir) btnAbrir.onclick = () => document.getElementById("modal").style.display = "flex";
   
-  document.getElementById("btnFecharModal").onclick = fecharModal;
-  document.getElementById("btnSalvarInsumo").onclick = adicionarInsumo;
+  const btnFechar = document.getElementById("btnFecharModal");
+  if (btnFechar) btnFechar.onclick = fecharModal;
   
-  // Fechar modal ao clicar fora
+  const btnSalvar = document.getElementById("btnSalvarInsumo");
+  if (btnSalvar) btnSalvar.onclick = adicionarInsumo;
+  
   window.onclick = (e) => {
     if (e.target === document.getElementById("modal")) fecharModal();
   };
   
-  // Filtros por setor
   document.querySelectorAll(".btn-setor").forEach(btn => {
     btn.onclick = () => {
       document.querySelectorAll(".btn-setor").forEach(b => b.classList.remove("ativo"));

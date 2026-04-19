@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pré-Preparo - Júlio's</title>
+  <link rel="stylesheet" href="../src/css/style.css">
+  <style>
+    .pre-container {
+      background: white;
+      border-radius: var(--radius);
+      padding: 25px;
+      box-shadow: var(--shadow);
+    }
+    
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 25px;
+    }
+    
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .form-group label {
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #555;
+    }
+    
+    .form-group input, .form-group select {
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    
+    .insumo-item {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 10px;
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+    
+    .btn-add {
+      background: linear-gradient(135deg, #28a745, #20c997);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    
+    .btn-remover {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    
+    .resumo-pre {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border-radius: 15px;
+      padding: 20px;
+      margin-top: 25px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      text-align: center;
+    }
+    
+    .btn-salvar {
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 50px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      width: 100%;
+      margin-top: 25px;
+    }
+    
+    .info-porcao {
+      background: #e8f4fd;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .info-porcao span {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <div class="logo-container">
+        <div class="logo">
+          <img src="../src/assets/logo.png" alt="Júlio's">
+        </div>
+        <div class="header-info">
+          <h1>🥣 Pré-Preparo</h1>
+          <span class="subtitle">Júlio's</span>
+        </div>
+      </div>
+      <nav class="main-nav">
+        <a href="../public/index.html" class="nav-btn">
+          <span class="emoji">🏠</span>
+          <span>Dashboard</span>
+        </a>
+        <a href="insumos.html" class="nav-btn">
+          <span class="emoji">📦</span>
+          <span>Insumos</span>
+        </a>
+        <a href="ficha-tecnica.html" class="nav-btn">
+          <span class="emoji">📝</span>
+          <span>Ficha Técnica</span>
+        </a>
+        <a href="pre-preparo.html" class="nav-btn nova-ficha active">
+          <span class="emoji">🥣</span>
+          <span>Pré-Preparo</span>
+        </a>
+      </nav>
+    </header>
+
+    <div class="pre-container">
+      <h2 style="margin-bottom: 25px;">📋 Cadastro de Pré-Preparo</h2>
+      <p style="margin-bottom: 20px; color: #666;">Produtos intermediários como massa base, molhos, que podem ser usados em várias receitas</p>
+
+      <form id="preForm">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Nome do Preparo *</label>
+            <input type="text" id="nomePre" placeholder="Ex: MASSA BASE" required>
+          </div>
+          <div class="form-group">
+            <label>Setor *</label>
+            <select id="setorPre" required>
+              <option value="">Selecione</option>
+              <option value="pizzaria">🍕 Pizzaria</option>
+              <option value="restaurante">🍔 Restaurante</option>
+              <option value="padaria">🥖 Padaria</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Classificação</label>
+            <input type="text" id="classificacao" placeholder="Ex: MASSAS, MOLHOS, RECHEIOS">
+          </div>
+        </div>
+
+        <div class="info-porcao">
+          <strong>📊 Rendimento:</strong> Esta receita rende 
+          <input type="number" id="rendimento" step="0.5" value="1" style="width: 80px; text-align: center;"> 
+          porção(ões) de 
+          <select id="unidadeRendimento" style="width: 100px;">
+            <option value="UND">UND (unidade)</option>
+            <option value="KG">KG</option>
+            <option value="L">L</option>
+            <option value="g">g</option>
+            <option value="ml">ml</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>🥗 Insumos da Receita</label>
+          <div id="insumosContainer">
+            <div class="insumo-item">
+              <select class="insumo-select" style="width: 100%;">
+                <option value="">Selecione um insumo</option>
+              </select>
+              <input type="number" class="insumo-quantidade" placeholder="Quantidade" step="0.001">
+              <select class="insumo-unidade">
+                <option value="g">g</option>
+                <option value="kg">kg</option>
+                <option value="ml">ml</option>
+                <option value="L">L</option>
+                <option value="UND">UND</option>
+              </select>
+              <input type="text" class="insumo-custo" readonly placeholder="Custo" style="background:#f0f0f0;">
+              <button type="button" class="btn-remover" onclick="removerInsumo(this)">🗑️</button>
+            </div>
+          </div>
+          <button type="button" class="btn-add" id="btnAddInsumo">
+            <span>➕</span> Adicionar Insumo
+          </button>
+        </div>
+
+        <div class="resumo-pre">
+          <div class="resumo-item">
+            <label>💰 Custo Total da Receita</label>
+            <div class="valor" id="custoTotal">R$ 0,00</div>
+          </div>
+          <div class="resumo-item">
+            <label>📦 Custo por Porção</label>
+            <div class="valor" id="custoPorPorcao">R$ 0,00</div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-salvar">
+          💾 Salvar Pré-Preparo (e criar como insumo)
+        </button>
+      </form>
+    </div>
+
+    <div id="mensagem" style="position: fixed; top: 20px; right: 20px; padding: 15px 25px; border-radius: 10px; display: none; z-index: 1000;"></div>
+
+    <footer>
+      <p>© 2026 Júlio's - Sistema de Ficha Técnica</p>
+    </footer>
+  </div>
+
+  <script type="module" src="../src/js/pre-preparo.js"></script>
+</body>
+</html>

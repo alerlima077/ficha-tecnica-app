@@ -3,30 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ficha Técnica Completa - Júlio's Pizzaria</title>
+  <title>Ficha Técnica - Júlio's</title>
   <link rel="stylesheet" href="../src/css/style.css">
-  <link rel="manifest" href="../manifest.json">
-  <meta name="theme-color" content="#ff6600">
   <style>
-    /* Estilos específicos para ficha técnica */
     .ficha-container {
-      max-width: 1400px;
-      margin: 0 auto;
-    }
-    
-    .form-section {
       background: white;
-      border-radius: 15px;
+      border-radius: var(--radius);
       padding: 25px;
-      margin-bottom: 30px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      box-shadow: var(--shadow);
     }
     
-    .form-section h3 {
-      color: #ff6600;
-      border-bottom: 2px solid #ff6600;
-      padding-bottom: 10px;
-      margin-bottom: 20px;
+    .ficha-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid var(--light);
+    }
+    
+    .ficha-header h2 {
+      color: var(--dark);
       display: flex;
       align-items: center;
       gap: 10px;
@@ -36,6 +35,7 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap: 20px;
+      margin-bottom: 25px;
     }
     
     .form-group {
@@ -45,378 +45,318 @@
     
     .form-group label {
       font-weight: bold;
-      margin-bottom: 5px;
+      margin-bottom: 8px;
       color: #555;
     }
     
-    .form-group input, 
-    .form-group select, 
+    .form-group input,
+    .form-group select,
     .form-group textarea {
-      padding: 10px;
+      padding: 12px;
       border: 1px solid #ddd;
       border-radius: 8px;
       font-size: 14px;
+      transition: all 0.3s;
     }
     
-    .form-group textarea {
-      resize: vertical;
-      min-height: 80px;
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.1);
     }
     
-    .ingrediente-item {
+    .insumos-lista {
+      margin-top: 10px;
+      margin-bottom: 20px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    
+    .insumo-item {
       background: #f8f9fa;
+      border-radius: 10px;
       padding: 15px;
-      border-radius: 8px;
       margin-bottom: 10px;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      grid-template-columns: 2fr 1fr 1fr 1fr auto;
       gap: 10px;
+      align-items: center;
     }
     
-    .btn-add {
-      background: #28a745;
+    .insumo-item select,
+    .insumo-item input {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+    }
+    
+    .insumo-item .pre-preparo-badge {
+      background: #ff6600;
+      color: white;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 10px;
+      margin-left: 5px;
+    }
+    
+    .btn-add-insumo-ficha {
+      background: linear-gradient(135deg, #28a745, #20c997);
       color: white;
       border: none;
       padding: 10px 20px;
       border-radius: 8px;
       cursor: pointer;
-      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
     }
     
-    .btn-save {
-      background: #ff6600;
+    .btn-remover-insumo {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    
+    .resumo-ficha {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border-radius: 15px;
+      padding: 20px;
+      margin-top: 25px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      text-align: center;
+    }
+    
+    .resumo-item {
+      text-align: center;
+    }
+    
+    .resumo-item label {
+      display: block;
+      font-size: 0.8rem;
+      opacity: 0.9;
+      margin-bottom: 5px;
+    }
+    
+    .resumo-item .valor {
+      font-size: 1.8rem;
+      font-weight: bold;
+    }
+    
+    .btn-salvar-ficha {
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
       color: white;
       border: none;
       padding: 15px 30px;
-      border-radius: 8px;
+      border-radius: 50px;
       cursor: pointer;
       font-size: 16px;
       font-weight: bold;
       width: 100%;
-      margin-top: 20px;
+      margin-top: 25px;
+      transition: all 0.3s;
     }
     
-    .btn-save:hover {
-      background: #e65c00;
+    .btn-salvar-ficha:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(255, 102, 0, 0.3);
     }
     
-    .custo-total {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 20px;
+    .mensagem {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px 25px;
       border-radius: 10px;
-      text-align: center;
-      margin-top: 20px;
-    }
-    
-    .custo-total h4 {
-      font-size: 1.2rem;
-      margin-bottom: 10px;
-    }
-    
-    .custo-total .valor {
-      font-size: 2rem;
+      color: white;
       font-weight: bold;
+      z-index: 1000;
+      display: none;
+      animation: slideIn 0.3s ease;
     }
     
-    .success-message {
-      background: #d4edda;
-      color: #155724;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      display: none;
+    .mensagem.sucesso {
+      background: #28a745;
     }
     
-    .error-message {
-      background: #f8d7da;
-      color: #721c24;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      display: none;
+    .mensagem.erro {
+      background: #dc3545;
+    }
+    
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    .badge-pre {
+      background: #ff6600;
+      color: white;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      margin-left: 8px;
     }
   </style>
 </head>
 <body>
-  <div class="ficha-container">
+  <div class="app-container">
     <header>
-      <div class="logo">
-        <img src="../src/assets/logo.png" alt="Logo Júlio's Pizzaria" width="80" onerror="this.src='https://via.placeholder.com/80x80?text=Logo'">
+      <div class="logo-container">
+        <div class="logo">
+          <img src="../src/assets/logo.png" alt="Júlio's">
+        </div>
+        <div class="header-info">
+          <h1>📝 Ficha Técnica</h1>
+          <span class="subtitle">Júlio's</span>
+        </div>
       </div>
-      <h1>🍕 Ficha Técnica Completa</h1>
+      <nav class="main-nav">
+        <a href="../public/index.html" class="nav-btn">
+          <span class="emoji">🏠</span>
+          <span>Dashboard</span>
+        </a>
+        <a href="insumos.html" class="nav-btn">
+          <span class="emoji">📦</span>
+          <span>Insumos</span>
+        </a>
+        <a href="pre-preparo.html" class="nav-btn">
+          <span class="emoji">🥣</span>
+          <span>Pré-Preparo</span>
+        </a>
+        <a href="ficha-tecnica.html" class="nav-btn nova-ficha active">
+          <span class="emoji">📝</span>
+          <span>Nova Ficha</span>
+        </a>
+      </nav>
     </header>
 
-    <div id="successMessage" class="success-message"></div>
-    <div id="errorMessage" class="error-message"></div>
+    <div class="ficha-container">
+      <div class="ficha-header">
+        <h2>
+          <span>📋</span>
+          Cadastro de Produto Final
+        </h2>
+      </div>
 
-    <form id="fichaForm">
-      <!-- 1. IDENTIFICAÇÃO DO PRODUTO -->
-      <div class="form-section">
-        <h3>📋 1. Identificação do Produto</h3>
+      <form id="fichaForm">
+        <!-- Linha 1: Identificação -->
         <div class="form-grid">
           <div class="form-group">
-            <label>Nome da Pizza *</label>
-            <input type="text" id="nome" required placeholder="Ex: Calabresa Especial">
+            <label>Setor *</label>
+            <select id="setor" required>
+              <option value="">Selecione</option>
+              <option value="pizzaria">🍕 Pizzaria</option>
+              <option value="restaurante">🍔 Restaurante</option>
+              <option value="padaria">🥖 Padaria</option>
+            </select>
           </div>
-          <div class="form-group">
-            <label>Código Interno / SKU *</label>
-            <input type="text" id="sku" required placeholder="Ex: PIZ-CAL-001">
-          </div>
+          
           <div class="form-group">
             <label>Categoria *</label>
             <select id="categoria" required>
-              <option value="">Selecione</option>
-              <option value="tradicional">Tradicional</option>
-              <option value="gourmet">Gourmet</option>
-              <option value="doce">Doce</option>
-              <option value="brotinho">Brotinho</option>
-              <option value="vegetariana">Vegetariana</option>
-              <option value="vegana">Vegana</option>
+              <option value="">Selecione primeiro o setor</option>
             </select>
           </div>
+          
           <div class="form-group">
-            <label>Tamanho *</label>
-            <select id="tamanho" required>
-              <option value="">Selecione</option>
-              <option value="broto">Brotinho (4 fatias)</option>
-              <option value="media">Média (6 fatias)</option>
-              <option value="grande">Grande (8 fatias)</option>
-              <option value="familia">Família (12 fatias)</option>
-            </select>
+            <label>Nome do Produto *</label>
+            <input type="text" id="nome" placeholder="Ex: Pizza Mista Grande" required>
           </div>
         </div>
-      </div>
 
-      <!-- 2. DESCRIÇÃO DO PRODUTO -->
-      <div class="form-section">
-        <h3>📝 2. Descrição do Produto</h3>
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Breve descrição comercial</label>
-            <textarea id="descricao" placeholder="Ex: Pizza tradicional com calabresa de primeira qualidade..."></textarea>
-          </div>
-          <div class="form-group">
-            <label>Características</label>
-            <input type="text" id="caracteristicas" placeholder="Ex: Massa fina, borda recheada">
-          </div>
-          <div class="form-group">
-            <label>Diferenciais</label>
-            <input type="text" id="diferenciais" placeholder="Ex: Artesanal, fermentação longa">
-          </div>
-        </div>
-      </div>
-
-      <!-- 3-7. INGREDIENTES (dinâmico) -->
-      <div class="form-section">
-        <h3>🥗 3-7. Ingredientes, Quantidades, Unidade e Custos</h3>
-        <div id="ingredientesList">
-          <div class="ingrediente-item" data-index="0">
-            <input type="text" placeholder="Nome do ingrediente" class="ingrediente-nome">
-            <input type="number" step="0.001" placeholder="Quantidade" class="ingrediente-qtd">
-            <select class="ingrediente-unidade">
-              <option value="g">g</option>
-              <option value="kg">kg</option>
-              <option value="ml">ml</option>
-              <option value="L">L</option>
-              <option value="un">unidade</option>
-            </select>
-            <input type="number" step="0.01" placeholder="Custo unitário (R$)" class="ingrediente-custoUnit">
-            <input type="text" placeholder="Fornecedor" class="ingrediente-fornecedor">
-          </div>
-        </div>
-        <button type="button" class="btn-add" onclick="adicionarIngrediente()">+ Adicionar Ingrediente</button>
-      </div>
-
-      <!-- 8. CUSTO TOTAL -->
-      <div class="custo-total">
-        <h4>💰 Custo Total da Pizza (CMV)</h4>
-        <div class="valor" id="custoTotal">R$ 0,00</div>
-      </div>
-
-      <!-- 9. CUSTOS INDIRETOS -->
-      <div class="form-section">
-        <h3>⚡ 9. Custos Indiretos</h3>
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Gás / Energia (R$)</label>
-            <input type="number" step="0.01" id="custoGas" value="0">
-          </div>
-          <div class="form-group">
-            <label>Água (R$)</label>
-            <input type="number" step="0.01" id="custoAgua" value="0">
-          </div>
-          <div class="form-group">
-            <label>Embalagem (caixa, sachês) (R$)</label>
-            <input type="number" step="0.01" id="custoEmbalagem" value="0">
-          </div>
-          <div class="form-group">
-            <label>Taxa de delivery (R$)</label>
-            <input type="number" step="0.01" id="custoDelivery" value="0">
-          </div>
-          <div class="form-group">
-            <label>Mão de obra proporcional (R$)</label>
-            <input type="number" step="0.01" id="custoMaoObra" value="0">
-          </div>
-        </div>
-      </div>
-
-      <!-- 10-11. PREÇO E MARGEM -->
-      <div class="form-section">
-        <h3>💵 10-11. Preço de Venda e Margem</h3>
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Preço de venda (R$) *</label>
-            <input type="number" step="0.01" id="precoVenda" required>
-          </div>
-          <div class="form-group">
-            <label>Margem desejada (%)</label>
-            <input type="number" step="0.1" id="margemDesejada" placeholder="Ex: 45">
-          </div>
-          <div class="form-group">
-            <label>Margem real (%)</label>
-            <input type="text" id="margemReal" readonly style="background:#f0f0f0">
-          </div>
-        </div>
-      </div>
-
-      <!-- 12. RENDIMENTO -->
-      <div class="form-section">
-        <h3>📊 12. Rendimento</h3>
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Quantas pizzas esta receita gera?</label>
-            <input type="number" id="rendimento" value="1" step="0.5">
-          </div>
-          <div class="form-group">
-            <label>Porcionamento padrão</label>
-            <input type="text" id="porcionamento" placeholder="Ex: 8 fatias">
-          </div>
-        </div>
-      </div>
-
-      <!-- 13. MODO DE PREPARO -->
-      <div class="form-section">
-        <h3>👨‍🍳 13. Modo de Preparo</h3>
+        <!-- Insumos (inclui pré-preparos) -->
         <div class="form-group">
-          <label>Passo a passo detalhado</label>
-          <textarea id="modoPreparo" rows="6" placeholder="1. Preparo da massa&#10;2. Montagem&#10;3. Forno..."></textarea>
+          <label>🥗 Ingredientes (Insumos e Pré-Preparos)</label>
+          <div id="insumosContainer" class="insumos-lista">
+            <div class="insumo-item">
+              <select class="insumo-select" style="width: 100%;">
+                <option value="">Selecione um insumo ou pré-preparo</option>
+              </select>
+              <input type="number" class="insumo-quantidade" placeholder="Quantidade" step="0.001" value="0">
+              <select class="insumo-unidade">
+                <option value="g">g</option>
+                <option value="kg">kg</option>
+                <option value="ml">ml</option>
+                <option value="L">L</option>
+                <option value="un">un</option>
+              </select>
+              <input type="text" class="insumo-custo" readonly placeholder="Custo (R$)" style="background:#f0f0f0;">
+              <button type="button" class="btn-remover-insumo" onclick="removerInsumo(this)">🗑️</button>
+            </div>
+          </div>
+          <button type="button" class="btn-add-insumo-ficha" id="btnAddInsumo">
+            <span>➕</span> Adicionar Ingrediente
+          </button>
+          <small style="color: #666; display: block; margin-top: 5px;">💡 Pré-preparos aparecem com selo 🟠 e são criados na tela "Pré-Preparo"</small>
         </div>
-      </div>
 
-      <!-- 14. TEMPO DE PREPARO -->
-      <div class="form-section">
-        <h3>⏱️ 14. Tempo de Preparo</h3>
+        <!-- Linha 3: Custos e Preços -->
         <div class="form-grid">
           <div class="form-group">
-            <label>Tempo total (minutos)</label>
-            <input type="number" id="tempoTotal" step="0.5">
+            <label>Preço de Venda (R$) *</label>
+            <input type="number" id="precoVenda" step="0.01" placeholder="0,00" required>
           </div>
+          
           <div class="form-group">
-            <label>Tempo de forno (minutos)</label>
-            <input type="number" id="tempoForno" step="0.5">
+            <label>Tempo de Preparo (minutos)</label>
+            <input type="number" id="tempoPreparo" step="1" placeholder="10">
           </div>
+          
           <div class="form-group">
-            <label>Tempo de montagem (minutos)</label>
-            <input type="number" id="tempoMontagem" step="0.5">
+            <label>Rendimento (quantas unidades)</label>
+            <input type="number" id="rendimento" step="0.5" value="1" placeholder="1">
           </div>
         </div>
-      </div>
 
-      <!-- 15. EQUIPAMENTOS -->
-      <div class="form-section">
-        <h3>🔧 15. Equipamentos Utilizados</h3>
-        <div class="form-group">
-          <input type="text" id="equipamentos" placeholder="Ex: Forno elétrico, masseira, bancada inox">
-        </div>
-      </div>
-
-      <!-- 16. PADRÃO DE MONTAGEM -->
-      <div class="form-section">
-        <h3>🎨 16. Padrão de Montagem</h3>
-        <div class="form-group">
-          <textarea id="padraoMontagem" placeholder="Ordem dos ingredientes, quantidade visual, borda com/sem recheio..."></textarea>
-        </div>
-      </div>
-
-      <!-- 17. CONTROLE DE QUALIDADE -->
-      <div class="form-section">
-        <h3>✅ 17. Controle de Qualidade</h3>
+        <!-- Responsável -->
         <div class="form-grid">
           <div class="form-group">
-            <label>Ponto da massa</label>
-            <input type="text" id="qualidadeMassa" placeholder="Ex: Dourada, crocante">
-          </div>
-          <div class="form-group">
-            <label>Tempo ideal de forno</label>
-            <input type="text" id="qualidadeTempo" placeholder="Ex: 8-10 minutos">
-          </div>
-          <div class="form-group">
-            <label>Aparência final</label>
-            <input type="text" id="qualidadeAparencia" placeholder="Ex: Uniforme, borda alta">
-          </div>
-          <div class="form-group">
-            <label>Peso final da pizza (g)</label>
-            <input type="number" id="qualidadePeso" step="1">
+            <label>Responsável</label>
+            <input type="text" id="responsavel" placeholder="Nome do responsável">
           </div>
         </div>
-      </div>
 
-      <!-- 18. INFORMAÇÕES NUTRICIONAIS -->
-      <div class="form-section">
-        <h3>🥗 18. Informações Nutricionais</h3>
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Calorias (por fatia)</label>
-            <input type="number" id="nutriCalorias" step="1">
+        <!-- Resumo -->
+        <div class="resumo-ficha">
+          <div class="resumo-item">
+            <label>💰 Custo Total (CMV)</label>
+            <div class="valor" id="custoTotal">R$ 0,00</div>
           </div>
-          <div class="form-group">
-            <label>Proteínas (g)</label>
-            <input type="number" id="nutriProteinas" step="0.1">
+          <div class="resumo-item">
+            <label>📈 Margem de Lucro</label>
+            <div class="valor" id="margem">0%</div>
           </div>
-          <div class="form-group">
-            <label>Alergênicos</label>
-            <input type="text" id="nutriAlergenicos" placeholder="Ex: Glúten, lactose">
+          <div class="resumo-item">
+            <label>💵 Lucro por Unidade</label>
+            <div class="valor" id="lucro">R$ 0,00</div>
           </div>
         </div>
-      </div>
 
-      <!-- 19. FORNECEDORES -->
-      <div class="form-section">
-        <h3>🏪 19. Fornecedores</h3>
-        <div class="form-group">
-          <textarea id="fornecedores" placeholder="Nome do fornecedor - Marca - Preço - Prazo&#10;Ex: Sadia - Mussarela - R$28/kg - 2 dias"></textarea>
-        </div>
-      </div>
+        <button type="submit" class="btn-salvar-ficha">
+          💾 Salvar Ficha Técnica
+        </button>
+      </form>
+    </div>
 
-      <!-- 20. DATA E VERSÃO -->
-      <div class="form-section">
-        <h3>📅 20. Data e Versão</h3>
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Data de criação</label>
-            <input type="date" id="dataCriacao">
-          </div>
-          <div class="form-group">
-            <label>Versão</label>
-            <input type="number" id="versao" value="1" step="0.1">
-          </div>
-        </div>
-      </div>
+    <div id="mensagem" class="mensagem"></div>
 
-      <!-- 21. RESPONSÁVEL -->
-      <div class="form-section">
-        <h3>👤 21. Responsável pela Ficha</h3>
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Nome do pizzaiolo / gestor</label>
-            <input type="text" id="responsavel" placeholder="Ex: José Silva">
-          </div>
-        </div>
-      </div>
-
-      <button type="submit" class="btn-save">💾 Salvar Ficha Técnica</button>
-    </form>
+    <footer>
+      <p>© 2026 Júlio's - Sistema de Ficha Técnica</p>
+    </footer>
   </div>
 
   <script type="module" src="../src/js/ficha-tecnica.js"></script>

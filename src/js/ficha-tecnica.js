@@ -1,299 +1,366 @@
 // src/js/ficha-tecnica.js
 import { db } from "../db/firebase.js";
 import { 
-  collection, addDoc, getDocs, query, where 
+  collection, getDocs, addDoc, query, where 
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// ============ VARIÁVEIS GLOBAIS ============
-let ingredientesCount = 1;
+let insumosDisponiveis = [];
+let prePreparosDisponiveis = [];
+let todosItensDisponiveis = [];
 
-// ============ ADICIONAR INGREDIENTE ============
-window.adicionarIngrediente = function() {
-  const container = document.getElementById("ingredientesList");
-  const newIndex = ingredientesCount;
+function mostrarMensagem(texto, tipo) {
+  const msg = document.getElementById('mensagem');
+  msg.textContent = texto;
+  msg.className = `mensagem ${tipo}`;
+  msg.style.display = 'block';
+  setTimeout(() => {
+    msg.style.display = 'none';
+  }, 3000);
+}
+
+// Carregar categorias baseado no setor
+async function carregarCategorias() {
+  const setor = document.getElementById('setor').value;
+  const categoriaSelect = document.getElementById('categoria');
   
-  const div = document.createElement("div");
-  div.className = "ingrediente-item";
-  div.setAttribute("data-index", newIndex);
-  div.innerHTML = `
-    <input type="text" placeholder="Nome do ingrediente" class="ingrediente-nome">
-    <input type="number" step="0.001" placeholder="Quantidade" class="ingrediente-qtd">
-    <select class="ingrediente-unidade">
+  const categoriasPorSetor = {
+    pizzaria: ['pizza', 'rodizio', 'macarrao'],
+    restaurante: ['lanche', 'porcao', 'salgado', 'pf', 'marmita', 'omelete', 'nhoque', 'sobremesa', 'buteco'],
+    padaria: ['pao', 'rosca', 'sonho']
+  };
+  
+  const categorias = categoriasPorSetor[setor] || [];
+  
+  categoriaSelect.innerHTML = '<option value="">Selecione uma categoria</option>';
+  categorias.forEach(cat => {
+    const option = document.createElement('option');
+    option.value = cat;
+    option.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+    categoriaSelect.appendChild(option);
+  });
+}
+
+// Carregar insumos e pré-preparos do Firebase
+async function carregarItensDisponiveis() {
+  try {
+    const setor = document.getElementById('setor').value;
+    if (!setor) return;
+    
+    // Carregar insumos normais
+    const insumosQuery = query(collection(db, "insumos"), where("setor", "==", setor));
+    const insumosSnapshot = await getDocs(insumosQuery);
+    
+    insumosDisponiveis = [];
+    insumosSnapshot.forEach(doc => {
+      const data = doc.data();
+      insumosDisponiveis.push({
+        id: doc.id,
+        ...data,
+        tipo: 'insumo'
+      });
+    });
+    
+    // Carregar pré-preparos
+    const preQuery = query(collection(db, "prePreparos"), where("setor", "==", setor));
+    const preSnapshot = await getDocs(preQuery);
+    
+    prePreparosDisponiveis = [];
+    preSnapshot.forEach(doc => {
+      const data = doc.data();
+      prePreparosDisponiveis.push({
+        id: doc.id,
+        nome: data.nome,
+        unidade: data.unidadeRendimento || 'UND',
+        valorCompra: data.custoPorPorcao || 0,
+        valorPorPorcao: data.custoPorPorcao || 0,
+        tipo: 'pre-preparo',
+        isPrePreparo: true
+      });
+    });
+    
+    // Combinar ambos
+    todosItensDisponiveis = [...insumosDisponiveis, ...prePreparosDisponiveis];
+    
+    atualizarSelectsItens();
+  } catch (error) {
+    console.error("Erro ao carregar itens:", error);
+  }
+}
+
+// Atualizar todos os selects de itens
+function atualizarSelectsItens() {
+  const selects = document.querySelectorAll('.insumo-select');
+  selects.forEach(select => {
+    const valorAtual = select.value;
+    select.innerHTML = '<option value="">Selecione um insumo ou pré-preparo</option>';
+    
+    // Primeiro insumos normais
+    insumosDisponiveis.forEach(insumo => {
+      const option = document.createElement('option');
+      option.value = insumo.id;
+      option.textContent = `${insumo.nome} (${insumo.unidade} - R$ ${(insumo.valorCompra || 0).toFixed(2)})`;
+      option.setAttribute('data-nome', insumo.nome);
+      option.setAttribute('data-unidade', insumo.unidade);
+      option.setAttribute('data-valor-porcao', insumo.valorPorPorcao || 0);
+      option.setAttribute('data-valor-compra', insumo.valorCompra || 0);
+      option.setAttribute('data-tipo', 'insumo');
+      select.appendChild(option);
+    });
+    
+    // Depois pré-preparos
+    prePreparosDisponiveis.forEach(pre => {
+      const option = document.createElement('option');
+      option.value = pre.id;
+      option.textContent = `🟠 ${pre.nome} (Pré-Preparo - R$ ${(pre.valorCompra || 0).toFixed(2)}/un)`;
+      option.setAttribute('data-nome', pre.nome);
+      option.setAttribute('data-unidade', pre.unidade);
+      option.setAttribute('data-valor-porcao', pre.valorPorPorcao || 0);
+      option.setAttribute('data-valor-compra', pre.valorCompra || 0);
+      option.setAttribute('data-tipo', 'pre-preparo');
+      select.appendChild(option);
+    });
+    
+    if (valorAtual && Array.from(select.options).some(opt => opt.value === valorAtual)) {
+      select.value = valorAtual;
+    }
+  });
+}
+
+// Adicionar novo insumo na ficha
+function adicionarLinhaInsumo() {
+  const container = document.getElementById('insumosContainer');
+  const novaLinha = document.createElement('div');
+  novaLinha.className = 'insumo-item';
+  novaLinha.innerHTML = `
+    <select class="insumo-select" style="width: 100%;">
+      <option value="">Selecione um insumo ou pré-preparo</option>
+    </select>
+    <input type="number" class="insumo-quantidade" placeholder="Quantidade" step="0.001" value="0">
+    <select class="insumo-unidade">
       <option value="g">g</option>
       <option value="kg">kg</option>
       <option value="ml">ml</option>
       <option value="L">L</option>
-      <option value="un">unidade</option>
+      <option value="un">un</option>
     </select>
-    <input type="number" step="0.01" placeholder="Custo unitário (R$)" class="ingrediente-custoUnit">
-    <input type="text" placeholder="Fornecedor" class="ingrediente-fornecedor">
-    <button type="button" onclick="removerIngrediente(this)" style="background:#dc3545; padding:5px 10px;">❌</button>
+    <input type="text" class="insumo-custo" readonly placeholder="Custo (R$)" style="background:#f0f0f0;">
+    <button type="button" class="btn-remover-insumo" onclick="removerInsumo(this)">🗑️</button>
   `;
+  container.appendChild(novaLinha);
   
-  container.appendChild(div);
-  ingredientesCount++;
-};
-
-window.removerIngrediente = function(button) {
-  button.parentElement.remove();
-  calcularCustoTotal();
-};
-
-// ============ CALCULAR CUSTO TOTAL ============
-function calcularCustoTotal() {
-  let totalIngredientes = 0;
+  // Atualizar o select da nova linha
+  const select = novaLinha.querySelector('.insumo-select');
+  select.innerHTML = '<option value="">Selecione um insumo ou pré-preparo</option>';
   
-  document.querySelectorAll('.ingrediente-item').forEach(item => {
-    const qtd = parseFloat(item.querySelector('.ingrediente-qtd')?.value) || 0;
-    const custoUnit = parseFloat(item.querySelector('.ingrediente-custoUnit')?.value) || 0;
-    
-    // Converter quantidade para kg se necessário
-    const unidade = item.querySelector('.ingrediente-unidade')?.value;
-    let qtdKg = qtd;
-    if (unidade === 'g') qtdKg = qtd / 1000;
-    else if (unidade === 'ml') qtdKg = qtd / 1000;
-    else if (unidade === 'un') qtdKg = qtd * 0.1; // Aproximação para unidades
-    else qtdKg = qtd;
-    
-    totalIngredientes += qtdKg * custoUnit;
+  insumosDisponiveis.forEach(insumo => {
+    const option = document.createElement('option');
+    option.value = insumo.id;
+    option.textContent = `${insumo.nome} (${insumo.unidade} - R$ ${(insumo.valorCompra || 0).toFixed(2)})`;
+    option.setAttribute('data-nome', insumo.nome);
+    option.setAttribute('data-unidade', insumo.unidade);
+    option.setAttribute('data-valor-porcao', insumo.valorPorPorcao || 0);
+    option.setAttribute('data-valor-compra', insumo.valorCompra || 0);
+    option.setAttribute('data-tipo', 'insumo');
+    select.appendChild(option);
   });
   
-  // Adicionar custos indiretos
-  const custoGas = parseFloat(document.getElementById('custoGas')?.value) || 0;
-  const custoAgua = parseFloat(document.getElementById('custoAgua')?.value) || 0;
-  const custoEmbalagem = parseFloat(document.getElementById('custoEmbalagem')?.value) || 0;
-  const custoDelivery = parseFloat(document.getElementById('custoDelivery')?.value) || 0;
-  const custoMaoObra = parseFloat(document.getElementById('custoMaoObra')?.value) || 0;
+  prePreparosDisponiveis.forEach(pre => {
+    const option = document.createElement('option');
+    option.value = pre.id;
+    option.textContent = `🟠 ${pre.nome} (Pré-Preparo - R$ ${(pre.valorCompra || 0).toFixed(2)}/un)`;
+    option.setAttribute('data-nome', pre.nome);
+    option.setAttribute('data-unidade', pre.unidade);
+    option.setAttribute('data-valor-porcao', pre.valorPorPorcao || 0);
+    option.setAttribute('data-valor-compra', pre.valorCompra || 0);
+    option.setAttribute('data-tipo', 'pre-preparo');
+    select.appendChild(option);
+  });
   
-  const custoTotal = totalIngredientes + custoGas + custoAgua + custoEmbalagem + custoDelivery + custoMaoObra;
+  select.addEventListener('change', () => calcularCustoInsumo(select));
+  const quantidade = novaLinha.querySelector('.insumo-quantidade');
+  quantidade.addEventListener('input', () => calcularCustoInsumo(select));
+}
+
+// Remover insumo da ficha
+window.removerInsumo = function(botao) {
+  const container = document.getElementById('insumosContainer');
+  if (container.children.length > 1) {
+    botao.closest('.insumo-item').remove();
+    calcularCustoTotal();
+  } else {
+    mostrarMensagem("Mantenha pelo menos um ingrediente!", "erro");
+  }
+};
+
+// Calcular custo de um insumo específico
+function calcularCustoInsumo(select) {
+  const item = select.closest('.insumo-item');
+  const quantidade = parseFloat(item.querySelector('.insumo-quantidade').value) || 0;
+  const selectedOption = select.options[select.selectedIndex];
+  const tipo = selectedOption?.getAttribute('data-tipo') || 'insumo';
+  let custo = 0;
   
-  const custoTotalEl = document.getElementById('custoTotal');
-  if (custoTotalEl) {
-    custoTotalEl.innerHTML = `R$ ${custoTotal.toFixed(2)}`;
+  if (tipo === 'pre-preparo') {
+    // Pré-preparo: custo = quantidade * valor por unidade do pré-preparo
+    const valorUnitario = parseFloat(selectedOption?.getAttribute('data-valor-compra')) || 0;
+    custo = quantidade * valorUnitario;
+  } else {
+    // Insumo normal: converter para kg/litro base
+    const valorPorPorcao = parseFloat(selectedOption?.getAttribute('data-valor-porcao')) || 0;
+    const unidade = selectedOption?.getAttribute('data-unidade') || 'KG';
+    
+    if (unidade === 'KG' || unidade === 'L') {
+      const valorCompra = parseFloat(selectedOption?.getAttribute('data-valor-compra')) || 0;
+      custo = quantidade * valorCompra;
+    } else if (unidade === 'g' || unidade === 'ml') {
+      const valorCompra = parseFloat(selectedOption?.getAttribute('data-valor-compra')) || 0;
+      custo = (quantidade / 1000) * valorCompra;
+    } else {
+      custo = quantidade * valorPorPorcao;
+    }
   }
   
-  // Calcular margem real
-  const precoVenda = parseFloat(document.getElementById('precoVenda')?.value) || 0;
-  if (precoVenda > 0) {
-    const margemReal = ((precoVenda - custoTotal) / precoVenda) * 100;
-    const margemRealEl = document.getElementById('margemReal');
-    if (margemRealEl) {
-      margemRealEl.value = `${margemReal.toFixed(1)}%`;
-      
-      // Colorir baseado na margem
-      if (margemReal < 30) margemRealEl.style.color = 'red';
-      else if (margemReal < 50) margemRealEl.style.color = 'orange';
-      else margemRealEl.style.color = 'green';
-    }
+  const custoInput = item.querySelector('.insumo-custo');
+  custoInput.value = `R$ ${custo.toFixed(2)}`;
+  
+  calcularCustoTotal();
+}
+
+// Calcular custo total do produto
+function calcularCustoTotal() {
+  let custoTotal = 0;
+  
+  document.querySelectorAll('.insumo-item').forEach(item => {
+    const custoText = item.querySelector('.insumo-custo').value;
+    const custo = parseFloat(custoText.replace('R$ ', '')) || 0;
+    custoTotal += custo;
+  });
+  
+  const precoVenda = parseFloat(document.getElementById('precoVenda').value) || 0;
+  const margem = precoVenda > 0 ? ((precoVenda - custoTotal) / precoVenda) * 100 : 0;
+  const lucro = precoVenda - custoTotal;
+  
+  document.getElementById('custoTotal').innerHTML = `R$ ${custoTotal.toFixed(2)}`;
+  document.getElementById('margem').innerHTML = `${margem.toFixed(1)}%`;
+  document.getElementById('lucro').innerHTML = `R$ ${lucro.toFixed(2)}`;
+  
+  // Colorir margem
+  const margemEl = document.getElementById('margem');
+  if (margemEl) {
+    if (margem < 30) margemEl.style.color = '#ff6b6b';
+    else if (margem < 50) margemEl.style.color = '#ffa502';
+    else margemEl.style.color = '#2ed573';
   }
   
   return custoTotal;
 }
 
-// ============ COLETAR INGREDIENTES ============
-function coletarIngredientes() {
-  const ingredientes = [];
+// Coletar insumos do formulário
+function coletarInsumos() {
+  const insumos = [];
   
-  document.querySelectorAll('.ingrediente-item').forEach(item => {
-    const nome = item.querySelector('.ingrediente-nome')?.value;
-    if (nome) {
-      ingredientes.push({
-        nome: nome,
-        quantidade: parseFloat(item.querySelector('.ingrediente-qtd')?.value) || 0,
-        unidade: item.querySelector('.ingrediente-unidade')?.value || 'g',
-        custoUnitario: parseFloat(item.querySelector('.ingrediente-custoUnit')?.value) || 0,
-        fornecedor: item.querySelector('.ingrediente-fornecedor')?.value || ''
+  document.querySelectorAll('.insumo-item').forEach(item => {
+    const select = item.querySelector('.insumo-select');
+    const selectedOption = select.options[select.selectedIndex];
+    const quantidade = parseFloat(item.querySelector('.insumo-quantidade').value) || 0;
+    const tipo = selectedOption?.getAttribute('data-tipo') || 'insumo';
+    
+    if (select.value && quantidade > 0) {
+      insumos.push({
+        insumoId: select.value,
+        nome: selectedOption?.getAttribute('data-nome') || '',
+        quantidade: quantidade,
+        unidade: item.querySelector('.insumo-unidade').value,
+        custo: parseFloat(item.querySelector('.insumo-custo').value.replace('R$ ', '')) || 0,
+        tipo: tipo
       });
     }
   });
   
-  return ingredientes;
+  return insumos;
 }
 
-// ============ MOSTRAR MENSAGEM ============
-function mostrarMensagem(tipo, texto) {
-  const successDiv = document.getElementById('successMessage');
-  const errorDiv = document.getElementById('errorMessage');
-  
-  if (tipo === 'success') {
-    successDiv.textContent = texto;
-    successDiv.style.display = 'block';
-    setTimeout(() => {
-      successDiv.style.display = 'none';
-    }, 3000);
-  } else {
-    errorDiv.textContent = texto;
-    errorDiv.style.display = 'block';
-    setTimeout(() => {
-      errorDiv.style.display = 'none';
-    }, 3000);
-  }
-}
-
-// ============ SALVAR FICHA TÉCNICA ============
+// Salvar ficha técnica
 async function salvarFicha(event) {
   event.preventDefault();
   
+  const setor = document.getElementById('setor').value;
+  const categoria = document.getElementById('categoria').value;
+  const nome = document.getElementById('nome').value;
+  const precoVenda = parseFloat(document.getElementById('precoVenda').value);
+  const tempoPreparo = parseInt(document.getElementById('tempoPreparo').value) || 0;
+  const rendimento = parseFloat(document.getElementById('rendimento').value) || 1;
+  const responsavel = document.getElementById('responsavel').value || 'Gestor';
+  const custoTotal = parseFloat(document.getElementById('custoTotal').innerHTML.replace('R$ ', '')) || 0;
+  const margem = parseFloat(document.getElementById('margem').innerHTML.replace('%', '')) || 0;
+  
+  if (!setor || !categoria || !nome || !precoVenda) {
+    mostrarMensagem("Preencha todos os campos obrigatórios!", "erro");
+    return;
+  }
+  
+  const insumos = coletarInsumos();
+  
+  if (insumos.length === 0) {
+    mostrarMensagem("Adicione pelo menos um ingrediente!", "erro");
+    return;
+  }
+  
   try {
-    // Verificar campos obrigatórios
-    const nome = document.getElementById('nome')?.value;
-    const sku = document.getElementById('sku')?.value;
-    const categoria = document.getElementById('categoria')?.value;
-    const tamanho = document.getElementById('tamanho')?.value;
-    const precoVenda = parseFloat(document.getElementById('precoVenda')?.value);
-    
-    if (!nome || !sku || !categoria || !tamanho || !precoVenda) {
-      mostrarMensagem('error', 'Preencha todos os campos obrigatórios (*)');
-      return;
-    }
-    
-    const ingredientes = coletarIngredientes();
-    const custoTotal = calcularCustoTotal();
-    const margemReal = precoVenda > 0 ? ((precoVenda - custoTotal) / precoVenda) * 100 : 0;
-    
-    // Coletar todos os dados
-    const fichaData = {
-      // 1. Identificação
-      nome: nome,
-      sku: sku,
+    await addDoc(collection(db, "produtos"), {
+      setor: setor,
       categoria: categoria,
-      tamanho: tamanho,
-      
-      // 2. Descrição
-      descricao: document.getElementById('descricao')?.value || '',
-      caracteristicas: document.getElementById('caracteristicas')?.value || '',
-      diferenciais: document.getElementById('diferenciais')?.value || '',
-      
-      // 3-7. Ingredientes
-      ingredientes: ingredientes,
-      
-      // 8. Custo total
-      custoTotalCMV: custoTotal,
-      
-      // 9. Custos indiretos
-      custosIndiretos: {
-        gas: parseFloat(document.getElementById('custoGas')?.value) || 0,
-        agua: parseFloat(document.getElementById('custoAgua')?.value) || 0,
-        embalagem: parseFloat(document.getElementById('custoEmbalagem')?.value) || 0,
-        taxaDelivery: parseFloat(document.getElementById('custoDelivery')?.value) || 0,
-        maoObra: parseFloat(document.getElementById('custoMaoObra')?.value) || 0
-      },
-      
-      // 10-11. Preço e margem
+      nome: nome,
+      custoTotal: custoTotal,
       precoVenda: precoVenda,
-      margemDesejada: parseFloat(document.getElementById('margemDesejada')?.value) || 0,
-      margemReal: margemReal,
-      
-      // 12. Rendimento
-      rendimento: parseFloat(document.getElementById('rendimento')?.value) || 1,
-      porcionamento: document.getElementById('porcionamento')?.value || '',
-      
-      // 13. Modo de preparo
-      modoPreparo: document.getElementById('modoPreparo')?.value || '',
-      
-      // 14. Tempo de preparo
-      tempoPreparo: {
-        total: parseFloat(document.getElementById('tempoTotal')?.value) || 0,
-        forno: parseFloat(document.getElementById('tempoForno')?.value) || 0,
-        montagem: parseFloat(document.getElementById('tempoMontagem')?.value) || 0
-      },
-      
-      // 15. Equipamentos
-      equipamentos: document.getElementById('equipamentos')?.value || '',
-      
-      // 16. Padrão de montagem
-      padraoMontagem: document.getElementById('padraoMontagem')?.value || '',
-      
-      // 17. Controle de qualidade
-      controleQualidade: {
-        pontoMassa: document.getElementById('qualidadeMassa')?.value || '',
-        tempoIdeal: document.getElementById('qualidadeTempo')?.value || '',
-        aparencia: document.getElementById('qualidadeAparencia')?.value || '',
-        pesoFinal: parseFloat(document.getElementById('qualidadePeso')?.value) || 0
-      },
-      
-      // 18. Informações nutricionais
-      informacoesNutricionais: {
-        calorias: parseFloat(document.getElementById('nutriCalorias')?.value) || 0,
-        proteinas: parseFloat(document.getElementById('nutriProteinas')?.value) || 0,
-        alergenicos: document.getElementById('nutriAlergenicos')?.value || ''
-      },
-      
-      // 19. Fornecedores
-      fornecedores: document.getElementById('fornecedores')?.value || '',
-      
-      // 20. Data e versão
-      dataCriacao: document.getElementById('dataCriacao')?.value || new Date().toISOString().split('T')[0],
-      dataAtualizacao: new Date().toISOString(),
-      versao: parseFloat(document.getElementById('versao')?.value) || 1,
-      
-      // 21. Responsável
-      responsavel: document.getElementById('responsavel')?.value || '',
-      
-      // Timestamp para ordenação
-      createdAt: new Date()
-    };
+      margem: margem,
+      tempoPreparo: tempoPreparo,
+      rendimento: rendimento,
+      responsavel: responsavel,
+      insumos: insumos,
+      dataAtualizacao: new Date().toISOString().split('T')[0]
+    });
     
-    // Salvar no Firebase
-    const docRef = await addDoc(collection(db, "fichasTecnicas"), fichaData);
+    mostrarMensagem(`✅ Produto "${nome}" salvo com sucesso!`, "sucesso");
     
-    mostrarMensagem('success', `✅ Ficha técnica "${nome}" salva com sucesso! ID: ${docRef.id}`);
-    
-    // Opcional: limpar formulário ou redirecionar
     setTimeout(() => {
-      if (confirm('Ficha salva! Deseja criar outra ficha?')) {
+      if (confirm("Produto salvo! Deseja cadastrar outro?")) {
         document.getElementById('fichaForm').reset();
-        document.getElementById('ingredientesList').innerHTML = '';
-        ingredientesCount = 0;
-        window.adicionarIngrediente();
+        document.getElementById('insumosContainer').innerHTML = '';
+        adicionarLinhaInsumo();
+        document.getElementById('setor').value = '';
+        document.getElementById('categoria').innerHTML = '<option value="">Selecione primeiro o setor</option>';
       } else {
-        window.location.href = 'index.html';
+        window.location.href = '../public/index.html';
       }
     }, 1000);
     
   } catch (error) {
-    console.error('Erro ao salvar:', error);
-    mostrarMensagem('error', '❌ Erro ao salvar ficha técnica. Verifique o Firebase.');
+    console.error("Erro ao salvar:", error);
+    mostrarMensagem("Erro ao salvar produto!", "erro");
   }
 }
 
-// ============ AUTO CALCULAR CUSTO ============
-function setupAutoCalculate() {
-  const campos = [
-    'custoGas', 'custoAgua', 'custoEmbalagem', 'custoDelivery', 'custoMaoObra', 'precoVenda'
-  ];
-  
-  campos.forEach(campo => {
-    const el = document.getElementById(campo);
-    if (el) {
-      el.addEventListener('input', () => calcularCustoTotal());
-    }
+// Event listeners
+document.addEventListener('DOMContentLoaded', () => {
+  const setorSelect = document.getElementById('setor');
+  setorSelect.addEventListener('change', () => {
+    carregarCategorias();
+    carregarItensDisponiveis();
   });
   
-  // Observer para ingredientes
-  const observer = new MutationObserver(() => calcularCustoTotal());
-  observer.observe(document.getElementById('ingredientesList'), { childList: true, subtree: true, attributes: true });
-}
-
-// ============ INICIALIZAR ============
-document.addEventListener('DOMContentLoaded', () => {
-  // Adicionar primeiro ingrediente
-  if (document.querySelectorAll('.ingrediente-item').length === 0) {
-    window.adicionarIngrediente();
-  }
+  document.getElementById('btnAddInsumo').addEventListener('click', adicionarLinhaInsumo);
+  document.getElementById('fichaForm').addEventListener('submit', salvarFicha);
+  document.getElementById('precoVenda').addEventListener('input', calcularCustoTotal);
   
-  // Configurar eventos
-  const form = document.getElementById('fichaForm');
-  if (form) {
-    form.addEventListener('submit', salvarFicha);
-  }
-  
-  // Data de criação automática
-  const dataCriacao = document.getElementById('dataCriacao');
-  if (dataCriacao && !dataCriacao.value) {
-    dataCriacao.value = new Date().toISOString().split('T')[0];
-  }
-  
-  setupAutoCalculate();
-  calcularCustoTotal();
+  setTimeout(() => {
+    const selectInicial = document.querySelector('.insumo-select');
+    if (selectInicial) {
+      selectInicial.addEventListener('change', () => calcularCustoInsumo(selectInicial));
+      const quantidadeInicial = document.querySelector('.insumo-quantidade');
+      if (quantidadeInicial) {
+        quantidadeInicial.addEventListener('input', () => calcularCustoInsumo(selectInicial));
+      }
+    }
+  }, 500);
 });

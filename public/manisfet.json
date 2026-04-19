@@ -1,7 +1,7 @@
 {
-  "name": "Ficha Técnica - Pizzaria Júlio's",
-  "short_name": "Ficha Técnica",
-  "description": "Sistema de gestão de fichas técnicas para pizzaria",
+  "name": "Júlio's - Ficha Técnica",
+  "short_name": "Júlio's",
+  "description": "Sistema de Ficha Técnica para Pizzaria, Restaurante e Padaria",
   "start_url": "/public/index.html",
   "display": "standalone",
   "theme_color": "#ff6600",
@@ -21,8 +21,7 @@
     {
       "src": "../src/assets/logo.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     }
   ]
 }
