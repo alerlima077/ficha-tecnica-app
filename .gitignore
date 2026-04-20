@@ -1,0 +1,21 @@
+# Dependências
+node_modules/
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# Arquivos de log
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# Firebase (opcional - se tiver arquivos de credenciais)
+*.key
+*.pem
+serviceAccountKey.json
+
+# Cache do navegador
+.cache/
