@@ -9,6 +9,10 @@
     {
       "src": "pages/**",
       "use": "@vercel/static"
+    },
+    {
+      "src": "src/**",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
